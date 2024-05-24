@@ -81,6 +81,8 @@ int initFileSystem2 (){
 
 
 int mkdir(char newDir[LONGESTFILENAME-1]){
+
+    //habrá que mirar si es relativa o absoluta la dirección viendo si se pasa un parámetro o 2 (creo).
     if(newDir[0]=='/'){
         printf("/ not allowed as first character for a directory.");
         return 1;
@@ -93,13 +95,13 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     
     if(newElement==NULL) return 1;
 
-    printf("Ke");
-
     newElement->fatherDir = currentDir;
 
     //Copiamos el nombre a partir del primer elemento
     newElement->filename[0] = '/';
     strcpy(newElement->filename + 1, newDir);
+
+    printf("NEW DIR NAME: %s",newElement->filename);
 
     //Actual time//
     time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
@@ -107,45 +109,82 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     newElement->fecha = tm;
     //Actual time//
 
+    newElement -> clusterPointer = NULL;
+
+    //Voy a hacerlo primero con el puntero relativo, el absoluto se hará después.
+
     //Añadimos a la lista de directorios hijos del nodo padre
-    //Puntero casteado a la estructura correspondiente.
-    sonElemList* controlP = (sonElemList*) currentDir -> clusterPointer;
+    //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
+    sonElemList* controlP = &(currentDir -> clusterPointer);
 
-    while(controlP -> next != NULL){
-        controlP = controlP -> next;  //Recorremos la lista para insertar al final.
+    printf("\nPointer al principio: %p\n",currentDir -> clusterPointer);
+
+    //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
+    if(controlP != NULL){
+        while(controlP -> next != NULL){
+            controlP = controlP -> next;  //Recorremos la lista para insertar al final.
+        }
+        controlP -> next = (sonElemList*) malloc(sizeof(sonElemList));
+        controlP = controlP -> next;
+    }else{
+        controlP = (sonElemList*) malloc(sizeof(sonElemList));
     }
-
-    controlP -> next = (sonElemList *) malloc(sizeof(sonElemList));
-    if(controlP -> next == NULL){return 1;}
-
-    controlP = controlP -> next;//Nos ponemos en la última dirección y añaadimos en la lista de control
-
+    
     controlP -> next = NULL;
     controlP -> elemento = newElement;
 
-    //Como clusterElem solo tiene un puntero de este tipo, tenemos que castearlo en función de si es un directorio o archivo.
-    //si es un directorio (este caso), lo casteamos a sonElemList.
-    //en caso contrario, se castea a myData.
-    sonElemList* aux = (sonElemList *) malloc(sizeof(sonElemList));
 
-    if(aux==NULL){return 1;}
-
-    //No hay directorios dentro así que dejamos ambos punteros a null.
-    aux -> next = NULL;
-    aux -> elemento = NULL;
-
-    //Lo casteamos de vuelta como puntero a void para guardarlo en la estructura.
-    newElement->clusterPointer = (void*) aux;
+    printf("\nNew Elem dir name con controlP: %s\n", controlP -> elemento -> filename);
+    fflush(stdout);
 
     clusterActualSize++;
 
+    printf("Pointer al final: %p",currentDir -> clusterPointer);
+
+
+    //////Prueba//////
+    //Vemos que no se ha borrado el root.
+    printf("\nOld Elem dir name: %s\n", currentDir -> filename);
+    fflush(stdout);
+
+    printf("\nNew Elem dir name con controlP: %s\n", controlP -> elemento -> filename);
+    fflush(stdout);
+
+    sonElemList* pruebaCasteo = (sonElemList*) currentDir -> clusterPointer;
+
+    printf("\nNew Elem dir name: %s\n", pruebaCasteo -> elemento -> filename);
+    fflush(stdout);
+
+    /////Prueba////////
     return 0;
 }
 
 void ls(){
+
+    printf("Directorio actual: %s",currentDir -> filename);
+    
+
+    printf("Buscamos Paco:");
+    
+    fflush(stdout);
+
     sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
-    if(aux -> elemento -> filename[0] == NULL){
+
+    if(aux -> elemento == NULL){
+        printf("No se ha guardado nada.");
+    }
+    else{
+        printf("Char prohibido: %c",aux -> elemento -> filename[0]);
+    }
+    fflush(stdout);
+
+    
+
+    fflush(stdout);
+
+    if(aux -> elemento -> filename[0] != NULL){
         printf("Albacete");
+        fflush(stdout);
     }else if(aux -> elemento -> filename[0] == '\0'){
         printf("Awa");
     }else{
