@@ -106,6 +106,50 @@ void ls(){
     return;
 }
 
+int rmdir(const char* dirName) {
+    if (dirName[0] == '/') {
+        printf("/ not allowed as first character for a directory.\n");
+        return 1;
+    }
+
+    // Buscar el directorio en el directorio actual
+    sonElemList* prev = NULL;
+    sonElemList* current = (sonElemList*) currentDir->clusterPointer;
+
+    while (current != NULL && strcmp(current->elemento->filename + 1, dirName) != 0) {
+        prev = current;
+        current = current->next;
+    }
+
+    // Si no se encontró el directorio
+    if (current == NULL) {
+        printf("Directory not found.\n");
+        return 1;
+    }
+
+    // Comprobar si el directorio está vacío
+    if (current->elemento->clusterPointer != NULL) {
+        printf("Directory is not empty.\n");
+        return 1;
+    }
+
+    // Eliminar el directorio de la lista de hijos
+    if (prev == NULL) {
+        currentDir->clusterPointer = current->next;
+    } else {
+        prev->next = current->next;
+    }
+
+    // Liberar la memoria del directorio
+    free(current->elemento);
+    free(current);
+
+    clusterActualSize--;
+
+    printf("Directory %s deleted.\n", dirName);
+    return 0;
+}
+
 
 int cleanFileSystem(){//Solo libera root, si se ha declarado otro se queda suelto en memoria.
     free(rootElement);
@@ -122,7 +166,9 @@ int main(int argc, char *argv[]){
     mkdir("Folder 2");
     
     ls();
-
+	
+	rmdir("Folder 1");
+	
     ls();
 
     showDate(rootElement->fecha);
