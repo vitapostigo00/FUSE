@@ -26,58 +26,14 @@ int initFileSystem (){
     rootElement->fecha = tm;
     //Actual time//
 
-    //Como clusterElem solo tiene un puntero de este tipo, tenemos que castearlo en función de si es un directorio o archivo.
-    //si es un directorio (este caso), lo casteamos a sonElemList.
-    //en caso contrario, se castea a myData.
-    sonElemList* aux = (sonElemList *) malloc(sizeof(sonElemList));
-
-    //No hay directorios dentro así que dejamos ambos punteros a null.
-    aux -> next = NULL;
-    aux -> elemento = NULL;
-
     //Lo casteamos de vuelta como puntero a void para guardarlo en la estructura.
-    rootElement->clusterPointer = (void*) aux;
+    rootElement->clusterPointer = NULL;
 
     clusterActualSize++;
     currentDir = rootElement;            //Root es el directorio actual.
 
     return 0;
 }
-
-int initFileSystem2 (){
-    clusterActualSize=0;
-
-    rootElement = (clustElem *) malloc(sizeof(clustElem));
-    
-    if(rootElement==NULL) return 1;
-
-    rootElement->fatherDir = NULL;
-    strcpy(rootElement->filename, "/"); //Root
-
-    //Actual time//
-    time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
-    struct tm tm = *localtime(&t);
-    rootElement->fecha = tm;
-    //Actual time//
-
-    //Como clusterElem solo tiene un puntero de este tipo, tenemos que castearlo en función de si es un directorio o archivo.
-    //si es un directorio (este caso), lo casteamos a sonElemList.
-    //en caso contrario, se castea a myData.
-    sonElemList* aux = (sonElemList *) malloc(sizeof(sonElemList));
-
-    //No hay directorios dentro así que dejamos ambos punteros a null.
-    aux -> next = NULL;
-    aux -> elemento = NULL;
-
-    //Lo casteamos de vuelta como puntero a void para guardarlo en la estructura.
-    rootElement->clusterPointer = (void*) aux;
-
-    clusterActualSize++;
-    currentDir = rootElement;            //Root es el directorio actual.
-
-    return 0;
-}
-
 
 
 int mkdir(char newDir[LONGESTFILENAME-1]){
@@ -101,8 +57,6 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     newElement->filename[0] = '/';
     strcpy(newElement->filename + 1, newDir);
 
-    printf("NEW DIR NAME: %s",newElement->filename);
-
     //Actual time//
     time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
     struct tm tm = *localtime(&t);
@@ -117,8 +71,6 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
     sonElemList* controlP = &(currentDir -> clusterPointer);
 
-    printf("\nPointer al principio: %p\n",currentDir -> clusterPointer);
-
     //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
     if(controlP != NULL){
         while(controlP -> next != NULL){
@@ -129,78 +81,29 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     }else{
         controlP = (sonElemList*) malloc(sizeof(sonElemList));
     }
-    
+
     controlP -> next = NULL;
     controlP -> elemento = newElement;
 
-
-    printf("\nNew Elem dir name con controlP: %s\n", controlP -> elemento -> filename);
-    fflush(stdout);
-
     clusterActualSize++;
 
-    printf("Pointer al final: %p",currentDir -> clusterPointer);
-
-
-    //////Prueba//////
-    //Vemos que no se ha borrado el root.
-    printf("\nOld Elem dir name: %s\n", currentDir -> filename);
-    fflush(stdout);
-
-    printf("\nNew Elem dir name con controlP: %s\n", controlP -> elemento -> filename);
-    fflush(stdout);
-
-    sonElemList* pruebaCasteo = (sonElemList*) currentDir -> clusterPointer;
-
-    printf("\nNew Elem dir name: %s\n", pruebaCasteo -> elemento -> filename);
-    fflush(stdout);
-
-    /////Prueba////////
     return 0;
 }
 
 void ls(){
 
-    printf("Directorio actual: %s",currentDir -> filename);
-    
-
-    printf("Buscamos Paco:");
-    
-    fflush(stdout);
+    printf("Directorio actual: %s\n",currentDir -> filename);
 
     sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
 
-    if(aux -> elemento == NULL){
-        printf("No se ha guardado nada.");
-    }
-    else{
-        printf("Char prohibido: %c",aux -> elemento -> filename[0]);
-    }
-    fflush(stdout);
-
-    
-
-    fflush(stdout);
-
-    if(aux -> elemento -> filename[0] != NULL){
-        printf("Albacete");
+    while(aux!=NULL){
+        printf("%s     ",aux -> elemento ->filename);
         fflush(stdout);
-    }else if(aux -> elemento -> filename[0] == '\0'){
-        printf("Awa");
-    }else{
-        printf("%s",aux -> elemento -> filename);
-    }
-    fflush(stdout);
-    return;
-
-    /*
-    sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
-    while(aux != NULL){
-        clustElem* elemento = aux -> elemento;
-        printf("%s",elemento -> filename);
         aux = aux -> next;
     }
-    */
+    printf("\n");
+    fflush(stdout);
+    return;
 }
 
 
@@ -215,9 +118,10 @@ int main(int argc, char *argv[]){
     //Error in memory allocation.
     if(initFileSystem()==1){return 1;}
 
-    if(mkdir("Paco")==1){return 1;}else{
-        printf("A"); fflush(stdout);
-    }
+    mkdir("Folder 1"); 
+    mkdir("Folder 2");
+    
+    ls();
 
     ls();
 
