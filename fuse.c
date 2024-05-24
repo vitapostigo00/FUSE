@@ -138,10 +138,6 @@ void cd(char dir[LONGESTFILENAME-1]){
 }
 
 int rmdir(const char* dirName) {
-    if (dirName[0] == '/') {
-        printf("/ not allowed as first character for a directory.\n");
-        return 1;
-    }
 
     // Buscar el directorio en el directorio actual
     sonElemList* prev = NULL;
@@ -154,13 +150,13 @@ int rmdir(const char* dirName) {
 
     // Si no se encontró el directorio
     if (current == NULL) {
-        printf("Directory not found.\n");
+        printf("Directorio no encontrado.\n");
         return 1;
     }
 
     // Comprobar si el directorio está vacío
     if (current->elemento->clusterPointer != NULL) {
-        printf("Directory is not empty.\n");
+        printf("Directorio no está vacío.\n");
         return 1;
     }
 
@@ -177,10 +173,40 @@ int rmdir(const char* dirName) {
 
     clusterActualSize--;
 
-    printf("Directory %s deleted.\n", dirName);
+    printf("Directorio %s eliminado.\n", dirName);
     return 0;
 }
 
+int renameDir(const char* oldName, const char* newName) {
+
+    // Buscar el directorio en el directorio actual
+    sonElemList* current = (sonElemList*) currentDir->clusterPointer;
+
+    while (current != NULL && strcmp(current->elemento->filename + 1, oldName) != 0) {
+        current = current->next;
+    }
+
+    // Si no se encontró el directorio
+    if (current == NULL) {
+        printf("Directorio no encontrado.\n");
+        return 1;
+    }
+
+    // Verificar que no haya otro directorio con el nuevo nombre en el mismo directorio
+    sonElemList* ok = (sonElemList*) currentDir->clusterPointer;
+    while (ok != NULL) {
+        if (strcmp(ok->elemento->filename + 1, newName) == 0) {
+            printf("Directorio con el mismo nombre encontrado.\n");
+            return 1;
+        }
+        ok = ok->next;
+    }
+
+    // Cambiar el nombre
+    strcpy(current->elemento->filename + 1, newName);
+    printf("Directorio renombrado como: %s\n", current->elemento->filename);
+    return 0;
+}
 
 int cleanFileSystem(){//Solo libera root, si se ha declarado otro se queda suelto en memoria.
     free(rootElement);
