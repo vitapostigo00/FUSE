@@ -40,7 +40,7 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
 
     //habrá que mirar si es relativa o absoluta la dirección viendo si se pasa un parámetro o 2 (creo).
     if(newDir[0]=='/'){
-        printf("/ not allowed as first character for a directory.");
+        printf("/ not allowed as first character.");
         return 1;
     }else if(clusterActualSize>=65536){
         printf("FAT16 SIZE EXCEEDEED, STORAGE IS FULL.");
@@ -51,7 +51,7 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     
     if(newElement==NULL) return 1;
 
-    newElement->fatherDir = currentDir;
+    newElement -> fatherDir = currentDir;
 
     //Copiamos el nombre a partir del primer elemento
     newElement->filename[0] = '/';
@@ -106,6 +106,7 @@ void ls(){
     return;
 }
 
+<<<<<<< Updated upstream
 int rmdir(const char* dirName) {
     if (dirName[0] == '/') {
         printf("/ not allowed as first character for a directory.\n");
@@ -148,6 +149,14 @@ int rmdir(const char* dirName) {
 
     printf("Directory %s deleted.\n", dirName);
     return 0;
+=======
+void cd(char dir[LONGESTFILENAME-1]){
+
+    char filename[LONGESTFILENAME];
+    newElement->filename[0] = '/';
+    strcpy(filename + 1, newDir);
+
+>>>>>>> Stashed changes
 }
 
 
@@ -166,10 +175,15 @@ int main(int argc, char *argv[]){
     mkdir("Folder 2");
     
     ls();
+<<<<<<< Updated upstream
 	
 	rmdir("Folder 1");
 	
     ls();
+=======
+
+    //ls();
+>>>>>>> Stashed changes
 
     showDate(rootElement->fecha);
 
