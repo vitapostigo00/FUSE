@@ -9,3 +9,5 @@ rmdir() funcionando en relativo
 rmf() a implementar
 rename() funcionando en relativo
 scp()/mv() a implementar.
+
+Prueba
