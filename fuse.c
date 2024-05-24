@@ -108,9 +108,32 @@ void ls(){
 
 void cd(char dir[LONGESTFILENAME-1]){
 
+    if(strcmp(dir,"..")==0){
+        if(currentDir==rootElement){
+            printf("You are already in root");
+        }else{
+            currentDir = currentDir -> fatherDir;
+        }
+        return;
+    }
+
     char filename[LONGESTFILENAME];
-    newElement->filename[0] = '/';
-    strcpy(filename + 1, newDir);
+    filename[0] = '/';
+    strcpy(filename + 1, dir);
+
+    sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
+
+    while(aux != NULL  && strcmp(filename, aux -> elemento ->filename)!=0){
+        aux = aux -> next;
+    }
+
+    if(aux == NULL){
+        printf("Directorio no encontrado.");
+    }else if(strcmp(filename, aux -> elemento -> filename)==0){
+        currentDir = aux -> elemento;
+    }else{
+        printf("Fallo en la matrix");
+    }
 
 }
 
@@ -174,9 +197,15 @@ int main(int argc, char *argv[]){
     mkdir("Folder 2");
     
     ls();
+
+    cd("Folder 1");
 	
-	rmdir("Folder 1");
+    mkdir("kkwete");
 	
+    ls();
+
+    cd("..");
+
     ls();
 
     showDate(rootElement->fecha);
