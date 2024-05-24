@@ -106,7 +106,14 @@ void ls(){
     return;
 }
 
-<<<<<<< Updated upstream
+void cd(char dir[LONGESTFILENAME-1]){
+
+    char filename[LONGESTFILENAME];
+    newElement->filename[0] = '/';
+    strcpy(filename + 1, newDir);
+
+}
+
 int rmdir(const char* dirName) {
     if (dirName[0] == '/') {
         printf("/ not allowed as first character for a directory.\n");
@@ -149,14 +156,6 @@ int rmdir(const char* dirName) {
 
     printf("Directory %s deleted.\n", dirName);
     return 0;
-=======
-void cd(char dir[LONGESTFILENAME-1]){
-
-    char filename[LONGESTFILENAME];
-    newElement->filename[0] = '/';
-    strcpy(filename + 1, newDir);
-
->>>>>>> Stashed changes
 }
 
 
@@ -175,15 +174,10 @@ int main(int argc, char *argv[]){
     mkdir("Folder 2");
     
     ls();
-<<<<<<< Updated upstream
 	
 	rmdir("Folder 1");
 	
     ls();
-=======
-
-    //ls();
->>>>>>> Stashed changes
 
     showDate(rootElement->fecha);
 
