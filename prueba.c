@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-
-int main() {
+/*
+void prueba(){
     char* original = "Hola, Hola";
     int start = 4; // El índice desde donde quieres empezar a copiar, 0-based
     int length = strlen(original) - start;
@@ -18,6 +18,22 @@ int main() {
 
     // Imprimir la subcadena
     printf("Subcadena:|%s\n", subcadena);
+    
+}*/
+
+
+int main() {
+
+    char* paco = "hola\0";
+
+    if(paco[4] == "\0"){
+        printf("si");
+    }else{
+        printf("no");
+    }
+
+    printf("%lu",strlen(paco));
+
 
     return 0;
 

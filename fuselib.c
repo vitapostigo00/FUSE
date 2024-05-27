@@ -197,21 +197,39 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     //Reservamos primero memoria para el primer fragmento de Data:
     if(newElement -> clusterPointer == NULL) return 1;
 
+    //Pruebo a guardar solo 1 para ver si consigo que funcione:
+
+    myData* dataCopy = &(newElement -> clusterPointer);
+    dataCopy -> next = dataCopy;
+    strcpy(dataCopy -> infoFichero,content);
+
+    /*
+
+    printf("Memoria declarada: %p\n",&(newElement -> clusterPointer));
+
     //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
     myData* controlData = (myData*) &(newElement -> clusterPointer);
+
+    printf("Valor en memoria de controlData: %p\n",&controlData);
 
     //Si el tamagno del contenido es menor que el tamagno de 1 cluster lo copiamos en 1 cluster y ponemos el puntero
     //mirando a sí mismo para indicar que ha terminado.
     unsigned int i;
     for(i=0; i < dataToFill; i++ ){
         //Última iteración
+        printf("Entro aqui");
         if(i == dataToFill - 1 ){
             strncpy(controlData -> infoFichero, &content[i*BYTESPERCLUSTER], strlen(content)%BYTESPERCLUSTER);
+            printf("\nGuardando string, puntero a myData: |%p\n",controlData);
+            fflush(stdout);
+            //printf("Infofichero: %s\n",getTextFrom(controlData));
             controlData -> next = controlData;//Cuando el puntero se apunta a sí mismo indica fin del archivo.
             return 0;
         }else{
+            printf("Pero no aqui");
+            fflush(stdout);
             strncpy(controlData -> infoFichero, &content[i*BYTESPERCLUSTER], BYTESPERCLUSTER);
-            controlData -> next = malloc(sizeof(myData));
+            controlData -> next =(myData*) malloc(sizeof(myData));
             if(controlData -> next == NULL){printf("No se ha podido reservar memoria...");return 1;}
             controlData = controlData -> next;
         }
@@ -219,6 +237,58 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     
     printf("No se deberia llegar aqui");
     return 1;
+    */
+}
+
+char* getTextFrom(myData* myFile){
+
+    //printf("%c%c", myFile -> infoFichero[1], myFile -> infoFichero[2]);
+
+    return (char*)(myFile -> infoFichero[0]);
+}
+
+
+char* cat(char filename[LONGESTFILENAME]){
+    if(filename[0]=='/'){
+        return "Folders can't retrieve any text, only files can.";
+    }
+
+    sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
+
+    while(aux != NULL  && strcmp(filename, aux -> elemento -> filename)!=0){
+        aux = aux -> next;
+    }
+
+    if(aux == NULL){
+        return "Archivo no encontrado.";
+    }
+    else if(strcmp(filename, aux -> elemento -> filename) == 0){
+       // printf("Archivo con nombre: %s\n" , aux -> elemento -> filename);
+        myData* textoCat = (myData*) &(aux -> elemento -> clusterPointer);
+        unsigned int contador = 0;
+        unsigned int longitud = 1;
+        while(textoCat != textoCat -> next){
+            contador++;
+            longitud+=strlen(textoCat -> infoFichero);
+            textoCat = textoCat -> next;
+        }
+
+        textoCat = (myData*) &(aux -> elemento -> clusterPointer);
+        char* buffer = malloc(sizeof(char)*longitud);
+        if(buffer == NULL){return "No hay espacio para el buffer de texto";}
+        buffer[0] = '\0';
+        unsigned int i;
+
+        for(i = 0; i <= contador; i++ ){
+            strcat(buffer, textoCat -> infoFichero);
+            textoCat = textoCat -> next;
+        }
+        return buffer;
+    }else{
+        return "Logic issue, this message shouldn't be shown in screen";
+    }
+
+
 }
 
 int rmf(char dir[LONGESTFILENAME]){
@@ -282,6 +352,7 @@ int renameDir(const char* oldName, const char* newName) {
 
     // Verificar que no haya otro directorio con el nuevo nombre en el mismo directorio
     sonElemList* ok = (sonElemList*) currentDir->clusterPointer;
+
     while (ok != NULL) {
         if (strcmp(ok->elemento->filename + 1, newName) == 0) {
             printf("Directorio con el mismo nombre encontrado.\n");
@@ -306,23 +377,38 @@ int main(int argc, char *argv[]){
 
     //Error in memory allocation.
     if(initFileSystem()==1){return 1;}
-
+    /*
     mkdir("Folder 1"); 
     mkdir("Folder 2");
     
     ls();
 
     cd("Folder 1");
+    */
 	
-    mkf("arxivo","kkwete");
+    mkf("arxivo","kkwete2");
+    mkf("arxivo2","kkwete3");
+    mkf("arxivo3","kkwete1");
 
     ls();
 
-    cd("..");
+    //Hemos de liberar el puntero al archivo despues de imprimirlo ya que tenemos que darle memoria para poder
+    //pasarlo entre funciones.
+    char* toPrintCat = cat("arxivo");
+    printf("Arch1: %s\n", toPrintCat);
+    free(toPrintCat);
+
+    toPrintCat = cat("arxivo2");
+    printf("Arch2: %s\n", toPrintCat);
+    free(toPrintCat);
+
+    toPrintCat = cat("arxivo3");
+    printf("Arch3: %s\n", toPrintCat);
+    free(toPrintCat);
 
     ls();
 
-    showDate(rootElement->fecha);
+    //showDate(rootElement->fecha);
 
     if(cleanFileSystem()==1){return 1;}
 

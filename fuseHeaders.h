@@ -50,5 +50,7 @@ int rmdir(const char* dirName);
 int renameDir(const char* oldName, const char* newName);
 int cleanFileSystem();
 char* cat(char dir[LONGESTFILENAME]);
+//Función privada:
+char* getTextFrom(myData* myFile);
 
 #endif // FUSEHEADERS_H
