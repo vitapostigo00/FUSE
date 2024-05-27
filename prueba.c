@@ -1,20 +1,24 @@
 #include <stdio.h>
 #include <string.h>
 
-unsigned long miTam(char* laChain){
-
-    return strlen(laChain);
-}
-
-
 
 int main() {
-    // Declarar un puntero a char
-    char *miCadena;
+    char* original = "Hola, Hola";
+    int start = 4; // El índice desde donde quieres empezar a copiar, 0-based
+    int length = strlen(original) - start;
 
-    // Asignar una cadena al puntero
-    miCadena = "Holi\0 juanijuani";
+    // Crear un buffer para la subcadena
+    char subcadena[length + 1]; // +1 para el terminador nulo
 
-    printf("Longitud: %lu\n", miTam(miCadena));
+    // Copiar la subcadena usando strncpy
+    strncpy(subcadena, &original[start], length);
+
+    // Asegurarse de que la subcadena esté terminada en nulo
+    subcadena[length] = '\0';
+
+    // Imprimir la subcadena
+    printf("Subcadena:|%s\n", subcadena);
+
+    return 0;
 
 }

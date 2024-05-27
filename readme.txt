@@ -1,13 +1,13 @@
 Funciones a implementar:
 init() listo
-exit() a implementar
 mkdir() funcionando en relativo, no absoluto
 ls() funcionando en relativo, no absoluto
-
-mkf() no cambia
+mkf() a probar.
 rmdir() funcionando en relativo
-rmf() a implementar
 rename() funcionando en relativo
+
+rmf() a implementar
+exit() a implementar
 scp()/mv() a implementar.
 
 Prueba
