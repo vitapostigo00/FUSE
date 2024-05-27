@@ -49,7 +49,7 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
     if(newDir[0]=='/'){
         printf("/ not allowed as first character.");
         return 1;
-    }else if(clusterActualSize>=65536){
+    }else if(clusterActualSize>=MAXCLUSTERSIZE){
         printf("FAT16 SIZE EXCEEDEED, STORAGE IS FULL.");
         return 1;
     }
@@ -147,10 +147,13 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     if(dir[0]=='/'){
         printf("/ not allowed as first character.");
         return 1;
-    }else if(clusterActualSize>=65536){
+    }else if(clusterActualSize>=MAXCLUSTERSIZE){
         printf("FAT16 SIZE EXCEEDEED, CLUSTER STORAGE IS FULL.");
         return 1;
-    }else if((strlen(content)/BYTESPERCLUSTER)+1 >= dataActualSize){
+    }
+    
+    unsigned int dataToFill = strlen(content)/BYTESPERCLUSTER + 1;
+    if(dataToFill+dataActualSize >= MAXCLUSTERSIZE){
         printf("FAT16 SIZE EXCEEDEED, DATA STORAGE IS FULL.");
         return 1;
     }
@@ -183,7 +186,10 @@ int mkf(char dir[LONGESTFILENAME], char* content){
 
     //Si el tamagno del contenido es menor que el tamagno de 1 cluster lo copiamos en 1 cluster y ponemos el puntero
     //mirando a sí mismo para indicar que ha terminado.
-    
+    unsigned int i;
+    for(i=0; i <dataToFill, i++ ){
+        
+    }
     
     
     
