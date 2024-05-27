@@ -10,9 +10,16 @@
 #include <fcntl.h>
 #include <time.h>
 
+
+void showDate(struct tm time) {
+    printf("Creation: %d-%02d-%02d %02d:%02d:%02d\n", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+}
+
+
 int initFileSystem (){
     clusterActualSize=0;
-
+    dataActualSize=0;
+    
     rootElement = (clustElem *) malloc(sizeof(clustElem));
     
     if(rootElement==NULL) return 1;
@@ -107,7 +114,6 @@ void ls(){
 }
 
 void cd(char dir[LONGESTFILENAME-1]){
-
     if(strcmp(dir,"..")==0){
         if(currentDir==rootElement){
             printf("You are already in root");
@@ -137,11 +143,75 @@ void cd(char dir[LONGESTFILENAME-1]){
 
 }
 
+int mkf(char dir[LONGESTFILENAME], char* content){
+    if(dir[0]=='/'){
+        printf("/ not allowed as first character.");
+        return 1;
+    }else if(clusterActualSize>=65536){
+        printf("FAT16 SIZE EXCEEDEED, CLUSTER STORAGE IS FULL.");
+        return 1;
+    }else if((strlen(content)/BYTESPERCLUSTER)+1 >= dataActualSize){
+        printf("FAT16 SIZE EXCEEDEED, DATA STORAGE IS FULL.");
+        return 1;
+    }
+
+    clusterActualSize++;
+
+    clustElem* newElement = (clustElem *) malloc(sizeof(clustElem));
+    
+    if(newElement==NULL) return 1;
+
+    newElement -> fatherDir = currentDir;
+
+    strcpy(newElement->filename, dir);
+
+    //Actual time//
+    time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
+    struct tm tm = *localtime(&t);
+    newElement->fecha = tm;
+    //Actual time//
+
+    newElement -> clusterPointer = NULL;
+
+    //Voy a hacerlo primero con el puntero relativo, el absoluto se hará después.
+
+    //Reservamos primero memoria para el primer fragmento de Data:
+    currentDir -> clusterPointer = malloc(sizeof(myData));
+
+    //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
+    myData* controlP = &(currentDir -> clusterPointer);
+
+    //Si el tamagno del contenido es menor que el tamagno de 1 cluster lo copiamos en 1 cluster y ponemos el puntero
+    //mirando a sí mismo para indicar que ha terminado.
+    
+    
+    
+    
+    if(strlen(content)<BYTESPERCLUSTER){
+        strcpy(controlP,content);
+        controlP -> next = controlP;
+    }else{
+
+    }
+    
+    
+    //Guardar datos del archivo en memoria...
+
+
+
+    
+    return 0;
+}
+
+int rmf(char dir[LONGESTFILENAME]){
+    return 0;
+}
+
 int rmdir(const char* dirName) {
 
     // Buscar el directorio en el directorio actual
     sonElemList* prev = NULL;
-    sonElemList* current = (sonElemList*) currentDir->clusterPointer;
+    sonElemList* current = (sonElemList*) currentDir -> clusterPointer;
 
     while (current != NULL && strcmp(current->elemento->filename + 1, dirName) != 0) {
         prev = current;

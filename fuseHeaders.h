@@ -1,10 +1,8 @@
-#define FUSE_USE_VERSION 26
-
-//#include "fuseHeaders.h"
+#ifndef FUSEHEADERS_H
+#define FUSEHEADERS_H
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <fuse.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -36,9 +34,20 @@ typedef struct Data{
 
 //Variables globales: (inicializado en init)
 unsigned int clusterActualSize;
+unsigned int dataActualSize;
+
 clustElem* rootElement = NULL;
 clustElem* currentDir = NULL;
 
-void showDate(struct tm time) {
-  printf("Creation: %d-%02d-%02d %02d:%02d:%02d\n", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
-}
+void showDate(struct tm time);
+int initFileSystem ();
+int mkdir(char newDir[LONGESTFILENAME-1]);
+void ls();
+void cd(char dir[LONGESTFILENAME-1]);
+int mkf(char dir[LONGESTFILENAME], char* content);
+int rmf(char dir[LONGESTFILENAME]);
+int rmdir(const char* dirName);
+int renameDir(const char* oldName, const char* newName);
+int cleanFileSystem();
+
+#endif // FUSEHEADERS_H
