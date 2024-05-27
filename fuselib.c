@@ -193,15 +193,41 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     controlP -> elemento = newElement;
 
     newElement -> clusterPointer = malloc(sizeof(myData));
-
-    //Reservamos primero memoria para el primer fragmento de Data:
     if(newElement -> clusterPointer == NULL) return 1;
 
-    //Pruebo a guardar solo 1 para ver si consigo que funcione:
-
     myData* dataCopy = &(newElement -> clusterPointer);
-    dataCopy -> next = dataCopy;
-    strcpy(dataCopy -> infoFichero,content);
+
+    //Si cabe en una sola estructura... (ha de ser menor estricto para poder guardar el \0)
+    if(strlen(content) < BYTESPERCLUSTER){
+        //Reservamos memoria para el primer fragmento de Data:
+        dataCopy -> next = dataCopy;
+        strcpy(dataCopy -> infoFichero, content);
+        return 0;
+    }
+    unsigned i;
+    //Llegamos aqui si el numero de caracteres supera BYTESPERCLUSTER 
+    for(i=0; i < dataToFill; i++){//Mirar si es < o <=
+        //Copiamos los BYTESPERCLUSTER primeros caracteres, los borramos y repetimos
+        
+        if(i == dataToFill-1){//ultima iteracion
+            strcpy(dataCopy -> infoFichero, content);
+            printf("Parte: %u: |%s\n",i, dataCopy -> infoFichero);
+            dataCopy -> next = dataCopy;
+        }else{
+            strncpy(dataCopy -> infoFichero, content, BYTESPERCLUSTER);
+            printf("Parte: %u: |%s\n",i,dataCopy -> infoFichero);
+            //remove_allocated_chars(content);
+            dataCopy -> next = (myData*) malloc(sizeof(myData));
+            if(dataCopy -> next == NULL) return 1;
+            dataCopy = dataCopy -> next;
+        }
+        printf("Content a escribir todavia: %s\n", content);
+        
+    }
+    return 1;
+    
+
+
 
     /*
 
@@ -240,13 +266,14 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     */
 }
 
-char* getTextFrom(myData* myFile){
+void remove_allocated_chars(char *str) {
+    int length = strlen(str);
 
-    //printf("%c%c", myFile -> infoFichero[1], myFile -> infoFichero[2]);
-
-    return (char*)(myFile -> infoFichero[0]);
+    // Desplazar los caracteres restantes hacia el inicio del string
+    for (int i = 0; i < length - BYTESPERCLUSTER + 1; i++) {
+        str[i] = str[i + BYTESPERCLUSTER];
+    }
 }
-
 
 char* cat(char filename[LONGESTFILENAME]){
     if(filename[0]=='/'){
@@ -283,11 +310,11 @@ char* cat(char filename[LONGESTFILENAME]){
             strcat(buffer, textoCat -> infoFichero);
             textoCat = textoCat -> next;
         }
+
         return buffer;
     }else{
         return "Logic issue, this message shouldn't be shown in screen";
     }
-
 
 }
 
@@ -385,10 +412,11 @@ int main(int argc, char *argv[]){
 
     cd("Folder 1");
     */
-	
-    mkf("arxivo","kkwete2");
-    mkf("arxivo2","kkwete3");
-    mkf("arxivo3","kkwete1");
+
+    mkf("arxivo","kkwetee");
+
+    printf("Holi\n");
+    fflush(stdout);
 
     ls();
 
@@ -396,14 +424,6 @@ int main(int argc, char *argv[]){
     //pasarlo entre funciones.
     char* toPrintCat = cat("arxivo");
     printf("Arch1: %s\n", toPrintCat);
-    free(toPrintCat);
-
-    toPrintCat = cat("arxivo2");
-    printf("Arch2: %s\n", toPrintCat);
-    free(toPrintCat);
-
-    toPrintCat = cat("arxivo3");
-    printf("Arch3: %s\n", toPrintCat);
     free(toPrintCat);
 
     ls();

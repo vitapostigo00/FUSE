@@ -22,19 +22,27 @@ void prueba(){
 }*/
 
 
-int main() {
+void remove_first_n_chars(char *str, int n) {
+    int length = strlen(str);
 
-    char* paco = "hola\0";
-
-    if(paco[4] == "\0"){
-        printf("si");
-    }else{
-        printf("no");
+    // Verificar que n no exceda la longitud del string
+    if (n > length) {
+        n = length;
     }
 
-    printf("%lu",strlen(paco));
+    // Desplazar los caracteres restantes hacia el inicio del string
+    for (int i = 0; i < length - n + 1; i++) {
+        str[i] = str[i + n];
+    }
+}
 
+int main() {
+    char original[] = "Hola, mundo";
+    int n = 5; // Número de caracteres a eliminar
+
+    printf("Original: %s\n", original);
+    remove_first_n_chars(original, n);
+    printf("Modificado: %s\n", original);
 
     return 0;
-
 }

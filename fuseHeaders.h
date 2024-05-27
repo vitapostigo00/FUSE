@@ -11,7 +11,7 @@
 //Constantes:
 #define LONGESTFILENAME 32
 #define MAXCLUSTERSIZE  65536       //2^16 (FAT16)
-#define BYTESPERCLUSTER 32768       //32KB por cluster
+#define BYTESPERCLUSTER 4//32768       //32KB por cluster cambiado a 4 para pruebas
 
 typedef struct ClusterElement{
     struct ClusterElement* fatherDir;       // Solo hay un padre por directorio.
@@ -51,6 +51,6 @@ int renameDir(const char* oldName, const char* newName);
 int cleanFileSystem();
 char* cat(char dir[LONGESTFILENAME]);
 //Función privada:
-char* getTextFrom(myData* myFile);
+void remove_allocated_chars(char *str);
 
 #endif // FUSEHEADERS_H
