@@ -49,5 +49,6 @@ int rmf(char dir[LONGESTFILENAME]);
 int rmdir(const char* dirName);
 int renameDir(const char* oldName, const char* newName);
 int cleanFileSystem();
+char* cat(char dir[LONGESTFILENAME]);
 
 #endif // FUSEHEADERS_H

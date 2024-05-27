@@ -76,7 +76,7 @@ int mkdir(char newDir[LONGESTFILENAME-1]){
 
     //Añadimos a la lista de directorios hijos del nodo padre
     //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
-    sonElemList* controlP = &(currentDir -> clusterPointer);
+    sonElemList* controlP = (sonElemList*) &(currentDir -> clusterPointer);
 
     //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
     if(controlP != NULL){
@@ -176,7 +176,7 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     //Actual time//
 
     //Ponemos el puntero de la carpeta padre mirando al nuevo fichero:
-    sonElemList* controlP = &(currentDir -> clusterPointer);
+    sonElemList* controlP = (sonElemList*) &(currentDir -> clusterPointer);
 
     //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
     if(controlP != NULL){
@@ -198,7 +198,7 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     if(newElement -> clusterPointer == NULL) return 1;
 
     //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
-    myData* controlData = &(newElement -> clusterPointer);
+    myData* controlData = (myData*) &(newElement -> clusterPointer);
 
     //Si el tamagno del contenido es menor que el tamagno de 1 cluster lo copiamos en 1 cluster y ponemos el puntero
     //mirando a sí mismo para indicar que ha terminado.
@@ -315,10 +315,6 @@ int main(int argc, char *argv[]){
     cd("Folder 1");
 	
     mkf("arxivo","kkwete");
-	
-    //printf("e?");
-
-    fflush(stdout);
 
     ls();
 
