@@ -103,8 +103,8 @@ void ls(){
 
     sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
 
-    while(aux!=NULL){
-        printf("%s     ",aux -> elemento ->filename);
+    while(aux != NULL){
+        printf("%s     ",aux -> elemento -> filename);
         fflush(stdout);
         aux = aux -> next;
     }
@@ -175,29 +175,45 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     newElement->fecha = tm;
     //Actual time//
 
-    //Voy a hacerlo primero con el puntero relativo, el absoluto se hará después.
+    //Ponemos el puntero de la carpeta padre mirando al nuevo fichero:
+    sonElemList* controlP = &(currentDir -> clusterPointer);
+
+    //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
+    if(controlP != NULL){
+        while(controlP -> next != NULL){
+            controlP = controlP -> next;  //Recorremos la lista para insertar al final.
+        }
+        controlP -> next = (sonElemList*) malloc(sizeof(sonElemList));
+        controlP = controlP -> next;
+    }else{
+        controlP = (sonElemList*) malloc(sizeof(sonElemList));
+    }
+
+    controlP -> next = NULL;
+    controlP -> elemento = newElement;
+
+    newElement -> clusterPointer = malloc(sizeof(myData));
 
     //Reservamos primero memoria para el primer fragmento de Data:
-    currentDir -> clusterPointer = malloc(sizeof(myData));
-    if(currentDir -> clusterPointer == NULL) return 1;
+    if(newElement -> clusterPointer == NULL) return 1;
 
     //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
-    myData* controlP = &(currentDir -> clusterPointer);
+    myData* controlData = &(newElement -> clusterPointer);
 
     //Si el tamagno del contenido es menor que el tamagno de 1 cluster lo copiamos en 1 cluster y ponemos el puntero
     //mirando a sí mismo para indicar que ha terminado.
     unsigned int i;
-    for(i=0; i < dataToFill, i++ ){
+    for(i=0; i < dataToFill; i++ ){
         //Última iteración
         if(i == dataToFill - 1 ){
-            strncpy(controlP -> infoFichero, &content[i*BYTESPERCLUSTER], strlen(content)%BYTESPERCLUSTER);
-            controlP -> next = controlP;//Cuando el puntero se apunta a sí mismo indica fin del archivo.
+            strncpy(controlData -> infoFichero, &content[i*BYTESPERCLUSTER], strlen(content)%BYTESPERCLUSTER);
+            controlData -> next = controlData;//Cuando el puntero se apunta a sí mismo indica fin del archivo.
             return 0;
         }else{
-            strncpy(controlP -> infoFichero, &content[i*BYTESPERCLUSTER], BYTESPERCLUSTER);
-            controlP -> next = malloc(sizeof(myData));
-            if(controlP -> next == NULL){printf("No se ha podido reservar memoria...");return 1;}
-            controlP = controlP -> next;
+            strncpy(controlData -> infoFichero, &content[i*BYTESPERCLUSTER], BYTESPERCLUSTER);
+            controlData -> next = malloc(sizeof(myData));
+            if(controlData -> next == NULL){printf("No se ha podido reservar memoria...");return 1;}
+            controlData = controlData -> next;
         }
     }
     
@@ -298,8 +314,12 @@ int main(int argc, char *argv[]){
 
     cd("Folder 1");
 	
-    mkdir("kkwete");
+    mkf("arxivo","kkwete");
 	
+    //printf("e?");
+
+    fflush(stdout);
+
     ls();
 
     cd("..");
