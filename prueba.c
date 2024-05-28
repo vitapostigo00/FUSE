@@ -101,6 +101,7 @@ void createFileSystemBin() {
 
     // Primera entrada
     int pathLength1 = strlen("/file1.txt");
+    printf("Long: %i\n",pathLength1);
     char path1[] = "/file1.txt";
     unsigned long dataSize1 = strlen("Hello, World!");
     char data1[] = "Hello, World!";

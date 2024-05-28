@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <time.h>
 
+elementoTabla *globalTable = NULL;
+
 unsigned long getFileSize(FILE *file) {
     fseek(file, 0, SEEK_END);
     unsigned long size = ftell(file);
