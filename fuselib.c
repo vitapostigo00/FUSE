@@ -7,116 +7,108 @@
 #include <fcntl.h>
 #include <time.h>
 
-
 void showDate(struct tm time) {
     printf("Creation: %d-%02d-%02d %02d:%02d:%02d\n", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
 }
 
+int initFileSystem() {
+    // Inicializar variables globales
+    clusterActualSize = 0;
+    dataActualSize = 0;
+    checkBeforeCat = 0;
 
-int initFileSystem (){
-    clusterActualSize=0;
-    dataActualSize=0;
-    
-    rootElement = (clustElem *) malloc(sizeof(clustElem));
-    
-    if(rootElement==NULL) return 1;
+    // Crear y configurar el directorio raíz
+    rootElement = (clustElem*)malloc(sizeof(clustElem));
+    if (rootElement == NULL) {
+        perror("Error allocating memory for rootElement");
+        return 1;
+    }
 
-    rootElement->fatherDir = NULL;
-    strcpy(rootElement->filename, "/"); //Root
+    rootElement->fatherDir = NULL; // El directorio raíz no tiene padre
+    strcpy(rootElement->filename, "/"); // El nombre del directorio raíz es "/"
 
-    //Actual time//
-    time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
-    struct tm tm = *localtime(&t);
-    rootElement->fecha = tm;
-    //Actual time//
+    // Establecer la fecha de creación del directorio raíz
+    time_t t = time(NULL);
+    rootElement->fecha = *localtime(&t);
 
-    //Lo casteamos de vuelta como puntero a void para guardarlo en la estructura.
+    // El directorio raíz inicialmente no tiene hijos
     rootElement->clusterPointer = NULL;
 
+    // El directorio actual es el directorio raíz
+    currentDir = rootElement;
+
+    // Incrementar el tamaño actual del clúster ya que hemos creado el directorio raíz
     clusterActualSize++;
-    checkBeforeCat = 0;
-    currentDir = rootElement;            //Root es el directorio actual.
 
     return 0;
 }
 
 
-int mkdir(char newDir[LONGESTFILENAME-1]){
-
-    //habrá que mirar si es relativa o absoluta la dirección viendo si se pasa un parámetro o 2 (creo).
-    if(newDir[0]=='/'){
-        printf("/ not allowed as first character.");
+int mkdir(const char* newDir) {
+    if (newDir[0] == '/') {
+        printf("/ not allowed as first character.\n");
         return 1;
-    }else if(clusterActualSize>=MAXCLUSTERSIZE){
-        printf("FAT16 SIZE EXCEEDEED, STORAGE IS FULL.");
+    } else if (clusterActualSize >= MAXCLUSTERSIZE) {
+        printf("FAT16 SIZE EXCEEDED, STORAGE IS FULL.\n");
         return 1;
     }
 
-    clustElem* newElement = (clustElem *) malloc(sizeof(clustElem));
-    
-    if(newElement==NULL) return 1;
+    clustElem* newElement = (clustElem *)malloc(sizeof(clustElem));
+    if (newElement == NULL) return 1;
 
-    newElement -> fatherDir = currentDir;
+    newElement->fatherDir = currentDir;
 
-    //Copiamos el nombre a partir del primer elemento
     newElement->filename[0] = '/';
     strcpy(newElement->filename + 1, newDir);
 
-    //Actual time//
-    time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
+    time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     newElement->fecha = tm;
-    //Actual time//
 
-    newElement -> clusterPointer = NULL;
+    newElement->clusterPointer = NULL;
 
-    //Voy a hacerlo primero con el puntero relativo, el absoluto se hará después.
+    sonElemList* controlP = (sonElemList*)currentDir->clusterPointer;
 
-    //Añadimos a la lista de directorios hijos del nodo padre
-    //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
-    sonElemList* controlP = (sonElemList*) &(currentDir -> clusterPointer);
+    sonElemList* newChild = (sonElemList*)malloc(sizeof(sonElemList));
+    if (newChild == NULL) return 1;
+    newChild->next = NULL;
+    newChild->elemento = newElement;
 
-    //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
-    if(controlP != NULL){
-        while(controlP -> next != NULL){
-            controlP = controlP -> next;  //Recorremos la lista para insertar al final.
+    if (controlP == NULL) {
+        currentDir->clusterPointer = newChild;
+    } else {
+        while (controlP->next != NULL) {
+            controlP = controlP->next;
         }
-        controlP -> next = (sonElemList*) malloc(sizeof(sonElemList));
-        controlP = controlP -> next;
-    }else{
-        controlP = (sonElemList*) malloc(sizeof(sonElemList));
+        controlP->next = newChild;
     }
 
-    controlP -> next = NULL;
-    controlP -> elemento = newElement;
-
     clusterActualSize++;
-
     return 0;
 }
 
-void ls(){
 
-    printf("Directorio actual: %s\n",currentDir -> filename);
+void ls() {
+    printf("Directorio actual: %s\n", currentDir->filename);
 
-    sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
+    sonElemList* aux = (sonElemList*)currentDir->clusterPointer;
 
-    while(aux != NULL){
-        printf("%s     ",aux -> elemento -> filename);
+    while (aux != NULL) {
+        printf("%s     ", aux->elemento->filename);
         fflush(stdout);
-        aux = aux -> next;
+        aux = aux->next;
     }
     printf("\n");
     fflush(stdout);
     return;
 }
 
-void cd(char dir[LONGESTFILENAME-1]){
-    if(strcmp(dir,"..")==0){
-        if(currentDir==rootElement){
-            printf("You are already in root");
-        }else{
-            currentDir = currentDir -> fatherDir;
+void cd(const char* dir) {
+    if (strcmp(dir, "..") == 0) {
+        if (currentDir == rootElement) {
+            printf("You are already in root.\n");
+        } else {
+            currentDir = currentDir->fatherDir;
         }
         return;
     }
@@ -125,319 +117,342 @@ void cd(char dir[LONGESTFILENAME-1]){
     filename[0] = '/';
     strcpy(filename + 1, dir);
 
-    sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
+    sonElemList* aux = (sonElemList*)currentDir->clusterPointer;
 
-    while(aux != NULL  && strcmp(filename, aux -> elemento ->filename)!=0){
-        aux = aux -> next;
+    while (aux != NULL && strcmp(filename, aux->elemento->filename) != 0) {
+        aux = aux->next;
     }
 
-    if(aux == NULL){
-        printf("Directorio no encontrado.");
-    }else if(strcmp(filename, aux -> elemento -> filename)==0){
-        currentDir = aux -> elemento;
-    }else{
-        printf("Fallo en la matrix");
+    if (aux == NULL) {
+        printf("Directory not found.\n");
+    } else {
+        currentDir = aux->elemento;
     }
-
 }
 
-int mkf(char dir[LONGESTFILENAME], char* content){
-    if(dir[0]=='/'){
+
+int mkf(const char* dir, const char* content) {
+    if (dir[0] == '/') {
         printf("/ not allowed as first character.");
         return 1;
-    }else if(clusterActualSize>=MAXCLUSTERSIZE){
+    } else if (clusterActualSize >= MAXCLUSTERSIZE) {
         printf("FAT16 SIZE EXCEEDEED, CLUSTER STORAGE IS FULL.");
         return 1;
     }
-    
-    unsigned int dataToFill = strlen(content)/BYTESPERCLUSTER + 1;
-    if(dataToFill+dataActualSize >= MAXCLUSTERSIZE){
+
+    unsigned int dataToFill = strlen(content) / BYTESPERCLUSTER + 1;
+    if (dataToFill + dataActualSize >= MAXCLUSTERSIZE) {
         printf("FAT16 SIZE EXCEEDEED, DATA STORAGE IS FULL.");
         return 1;
+    }
+
+    clustElem* newElement = (clustElem*)malloc(sizeof(clustElem));
+    if (newElement == NULL) return 1;
+
+    newElement->fatherDir = currentDir;
+    strcpy(newElement->filename, dir);
+
+    // Actual time
+    time_t t = time(NULL);
+    newElement->fecha = *localtime(&t);
+
+    // Initialize the data structure for the new file
+    newElement->clusterPointer = malloc(sizeof(myData));
+    if (newElement->clusterPointer == NULL) {
+        free(newElement);
+        return 1;
+    }
+    myData* dataCopy = (myData*)newElement->clusterPointer;
+    dataCopy->next = dataCopy; // Initially point to itself
+    strncpy(dataCopy->infoFichero, content, BYTESPERCLUSTER);
+
+    // Add the new file to the list of children of the current directory
+    sonElemList* controlP = (sonElemList*)currentDir->clusterPointer;
+    if (controlP == NULL) {
+        controlP = (sonElemList*)malloc(sizeof(sonElemList));
+        if (controlP == NULL) {
+            free(newElement->clusterPointer);
+            free(newElement);
+            return 1;
+        }
+        controlP->elemento = newElement;
+        controlP->next = NULL;
+        currentDir->clusterPointer = controlP;
+    } else {
+        while (controlP->next != NULL) {
+            controlP = controlP->next;
+        }
+        controlP->next = (sonElemList*)malloc(sizeof(sonElemList));
+        if (controlP->next == NULL) {
+            free(newElement->clusterPointer);
+            free(newElement);
+            return 1;
+        }
+        controlP->next->elemento = newElement;
+        controlP->next->next = NULL;
     }
 
     clusterActualSize++;
     dataActualSize += dataToFill;
 
-    clustElem* newElement = (clustElem *) malloc(sizeof(clustElem));
-    
-    if(newElement==NULL) return 1;
-
-    newElement -> fatherDir = currentDir;
-
-    strcpy(newElement->filename, dir);
-
-    //Actual time//
-    time_t t = time(NULL);              //Hay que mirar si se guarda o si hay que hacerle otro malloc.
-    struct tm tm = *localtime(&t);
-    newElement->fecha = tm;
-    //Actual time//
-
-    //Ponemos el puntero de la carpeta padre mirando al nuevo fichero:
-    sonElemList* controlP = (sonElemList*) &(currentDir -> clusterPointer);
-
-    //Avanzamos en la lista hasta el último nodo. Si la lista estaba vacía, la declaramos.
-    if(controlP != NULL){
-        while(controlP -> next != NULL){
-            controlP = controlP -> next;  //Recorremos la lista para insertar al final.
-        }
-        controlP -> next = (sonElemList*) malloc(sizeof(sonElemList));
-        controlP = controlP -> next;
-    }else{
-        controlP = (sonElemList*) malloc(sizeof(sonElemList));
-    }
-
-    controlP -> next = NULL;
-    controlP -> elemento = newElement;
-
-
-    //Si cabe en una sola estructura... (ha de ser menor estricto para poder guardar el \0)
-    if(strlen(content) < BYTESPERCLUSTER){
-        newElement -> clusterPointer = malloc(sizeof(myData));
-        if(newElement -> clusterPointer == NULL) return 1;
-
-        myData* dataCopy = (myData*) &(newElement -> clusterPointer);
-        dataCopy -> next = dataCopy;
-        strcpy(dataCopy -> infoFichero, content);
-        return 0;
-    }
-    unsigned int i;
-    newElement -> clusterPointer = malloc(sizeof(myData));
-    if(newElement -> clusterPointer == NULL) return 1;
-    myData* dataCopy = (myData*) &(newElement -> clusterPointer);
-    for(i=0 ; i < dataToFill; i++){
-        unsigned int w;
-        if(i+1 == dataToFill){
-            for (w = 0; w < strlen(content)%BYTESPERCLUSTER ; w++){
-                dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
-            }
-            dataCopy -> next = dataCopy;
-        }else{
-            for (w = 0; w < BYTESPERCLUSTER ; w++){
-                dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
-            }
-            dataCopy -> next = (myData*) malloc(sizeof(myData));
-            if(dataCopy -> next == NULL) return 1;
-            dataCopy = dataCopy -> next;
-        }
-    }
     return 0;
 }
 
-void remove_allocated_chars(char *str) {
-    int length = strlen(str);
 
-    // Desplazar los caracteres restantes hacia el inicio del string
-    for (int i = 0; i < length - BYTESPERCLUSTER + 1; i++) {
-        str[i] = str[i + BYTESPERCLUSTER];
-    }
-}
 
-char* cat(char filename[LONGESTFILENAME]){
-    if(filename[0]=='/'){
-        return "Folders can't retrieve any text, only files can.";
+int rmf(const char* filename) {
+    if (filename[0] == '/') {
+        printf("/ not allowed as first character.\n");
+        return 1;
     }
 
-    sonElemList* aux = (sonElemList*) currentDir -> clusterPointer;
-
-    while(aux != NULL  && strcmp(filename, aux -> elemento -> filename)!=0){
-        aux = aux -> next;
-    }
-
-    if(aux == NULL){
-        return "Archivo no encontrado.";
-    }
-    else if(strcmp(filename, aux -> elemento -> filename) == 0){
-       // printf("Archivo con nombre: %s\n" , aux -> elemento -> filename);
-        myData* textoCat = (myData*) &(aux -> elemento -> clusterPointer);
-        unsigned int contador = 0;
-        unsigned int longitud = 1;
-        while(textoCat != textoCat -> next){
-            contador++;
-            longitud+=strlen(textoCat -> infoFichero);
-            textoCat = textoCat -> next;
-        }
-
-        textoCat = (myData*) &(aux -> elemento -> clusterPointer);
-        char* buffer = malloc(sizeof(char)*longitud);
-        if(buffer == NULL){return "No hay espacio para el buffer de texto";}
-        buffer[0] = '\0';
-        unsigned int i;
-
-        for(i = 0; i <= contador; i++ ){
-            strcat(buffer, textoCat -> infoFichero);
-            textoCat = textoCat -> next;
-        }
-        checkBeforeCat = 1;
-        return buffer;
-    }else{
-        return "Logic issue, this message shouldn't be shown in screen";
-    }
-
-}
-
-int rmf(char filename[LONGESTFILENAME]){
-    // Buscar el directorio en el directorio actual
+    // Buscar el archivo a eliminar
     sonElemList* prev = NULL;
-    sonElemList* current = (sonElemList*) currentDir -> clusterPointer;
+    sonElemList* current = (sonElemList*)currentDir->clusterPointer;
 
     while (current != NULL && strcmp(current->elemento->filename, filename) != 0) {
         prev = current;
         current = current->next;
     }
 
-    // Si no se encontró el directorio
     if (current == NULL) {
-        printf("Directorio no encontrado.\n");
+        printf("File not found.\n");
         return 1;
     }
 
-    // Comprobar si el directorio está vacío
+    // Verificar si el elemento a eliminar es un archivo
     if (current->elemento->clusterPointer == NULL) {
-        printf("Fallo en la estructura de datos. No hay datos asociados al fichero...\n");
+        printf("Not a file.\n");
         return 1;
     }
 
-    // Eliminar el directorio de la lista de hijos
+    // Liberar la memoria asociada con el archivo
+    myData* data = (myData*)(current->elemento->clusterPointer);
+    myData* currentData = data;
+
+    do {
+        myData* nextData = currentData->next;
+        free(currentData);
+        currentData = nextData;
+    } while (currentData != data);
+
+    // Eliminar el archivo de la lista de hijos del directorio actual
     if (prev == NULL) {
         currentDir->clusterPointer = current->next;
     } else {
         prev->next = current->next;
     }
 
-    myData* copy = (myData*) &(current -> elemento -> clusterPointer);
-    
-    while(copy -> next != copy){
-        myData* previo = (myData*) copy;
-        copy = copy -> next;
-        free(previo);
-    }
-
-    // Liberar la memoria del directorio
+    // Liberar la memoria del elemento eliminado
     free(current->elemento);
     free(current);
 
+    // Decrementar el contador de clústeres
     clusterActualSize--;
 
-    printf("Fichero %s eliminado.\n", filename);
     return 0;
 }
 
+
 int rmdir(const char* dirName) {
+    if (dirName[0] != '/') {
+        printf("Invalid directory name.\n");
+        return 1;
+    }
 
-    // Buscar el directorio en el directorio actual
+    // Buscar el directorio a eliminar
     sonElemList* prev = NULL;
-    sonElemList* current = (sonElemList*) currentDir -> clusterPointer;
+    sonElemList* current = (sonElemList*)currentDir->clusterPointer;
 
-    while (current != NULL && strcmp(current->elemento->filename + 1, dirName) != 0) {
+    while (current != NULL && strcmp(current->elemento->filename, dirName) != 0) {
         prev = current;
         current = current->next;
     }
 
-    // Si no se encontró el directorio
     if (current == NULL) {
-        printf("Directorio no encontrado.\n");
+        printf("Directory not found.\n");
         return 1;
     }
 
-    // Comprobar si el directorio está vacío
-    if (current->elemento->clusterPointer != NULL) {
-        printf("Directorio no está vacío.\n");
-        return 1;
+    // Liberar la memoria de los elementos hijo del directorio
+    sonElemList* child = (sonElemList*)current->elemento->clusterPointer;
+    while (child != NULL) {
+        sonElemList* nextChild = child->next;
+        free(child->elemento);
+        free(child);
+        child = nextChild;
     }
 
-    // Eliminar el directorio de la lista de hijos
+    // Eliminar el directorio de la lista de hijos del directorio padre
     if (prev == NULL) {
         currentDir->clusterPointer = current->next;
     } else {
         prev->next = current->next;
     }
 
-    // Liberar la memoria del directorio
+    // Liberar la memoria del directorio eliminado
     free(current->elemento);
     free(current);
 
+    // Decrementar el contador de clústeres
     clusterActualSize--;
 
-    printf("Directorio %s eliminado.\n", dirName);
     return 0;
 }
 
+
 int renameDir(const char* oldName, const char* newName) {
-
-    // Buscar el directorio en el directorio actual
-    sonElemList* current = (sonElemList*) currentDir->clusterPointer;
-
-    while (current != NULL && strcmp(current->elemento->filename + 1, oldName) != 0) {
-        current = current->next;
-    }
-
-    // Si no se encontró el directorio
-    if (current == NULL) {
-        printf("Directorio no encontrado.\n");
+    if (oldName[0] == '/' || newName[0] == '/') {
+        printf("/ not allowed as first character.");
         return 1;
     }
 
-    // Verificar que no haya otro directorio con el nuevo nombre en el mismo directorio
-    sonElemList* ok = (sonElemList*) currentDir->clusterPointer;
+    char oldFilename[LONGESTFILENAME];
+    char newFilename[LONGESTFILENAME];
+    strcpy(oldFilename, oldName);
+    strcpy(newFilename, newName);
 
-    while (ok != NULL) {
-        if (strcmp(ok->elemento->filename + 1, newName) == 0) {
-            printf("Directorio con el mismo nombre encontrado.\n");
-            return 1;
-        }
-        ok = ok->next;
+    sonElemList* aux = (sonElemList*)currentDir->clusterPointer;
+
+    while (aux != NULL && strcmp(oldFilename, aux->elemento->filename) != 0) {
+        aux = aux->next;
     }
 
-    // Cambiar el nombre
-    strcpy(current->elemento->filename + 1, newName);
-    printf("Directorio renombrado como: %s\n", current->elemento->filename);
+    if (aux == NULL) {
+        printf("Directory not found.");
+        return 1;
+    }
+
+    strcpy(aux->elemento->filename, newFilename);
     return 0;
 }
 
-int cleanFileSystem(){//Solo libera root, si se ha declarado otro se queda suelto en memoria.
-    free(rootElement);
+void freeClusterElement(clustElem* element) {
+    if (element == NULL) return;
+
+    // Free the children elements if it's a directory
+    if (element->filename[0] == '/') {
+        sonElemList* children = (sonElemList*)element->clusterPointer;
+        while (children != NULL) {
+            sonElemList* nextChild = children->next;
+            freeClusterElement(children->elemento);
+            free(children);
+            children = nextChild;
+        }
+    } else {
+        // Free the data if it's a file
+        myData* data = (myData*)element->clusterPointer;
+        if (data != NULL) {
+            myData* start = data;
+            do {
+                myData* nextData = data->next;
+                free(data);
+                data = nextData;
+            } while (data != start && data != NULL);
+        }
+    }
+
+    free(element);
+}
+
+int cleanFileSystem() {
+    if (rootElement == NULL) return 0;
+
+    freeClusterElement(rootElement);
+    rootElement = NULL;
+    currentDir = NULL;
+
     return 0;
 }
 
+char* cat(const char* filename) {
+    if (filename[0] == '/') {
+        return "Folders can't retrieve any text, only files can.";
+    }
 
-int main(int argc, char *argv[]){
+    sonElemList* aux = (sonElemList*)currentDir->clusterPointer;
 
-    //Error in memory allocation.
-    if(initFileSystem()==1){return 1;}
-    
+    while (aux != NULL && strcmp(filename, aux->elemento->filename) != 0) {
+        aux = aux->next;
+    }
+
+    if (aux == NULL) {
+        return "Archivo no encontrado.";
+    }
+
+    myData* textoCat = (myData*)aux->elemento->clusterPointer;
+    unsigned int longitud = 0;
+
+    // Calculate the total length of the content
+    myData* temp = textoCat;
+    do {
+        longitud += strlen(temp->infoFichero);
+        temp = temp->next;
+    } while (temp != textoCat);
+
+    char* buffer = (char*)malloc(longitud + 1);
+    if (buffer == NULL) {
+        return "No hay espacio para el buffer de texto";
+    }
+    buffer[0] = '\0';
+
+    // Copy the content into the buffer
+    temp = textoCat;
+    do {
+        strcat(buffer, temp->infoFichero);
+        temp = temp->next;
+    } while (temp != textoCat);
+
+    checkBeforeCat = 1;
+    return buffer;
+}
+
+
+
+void remove_allocated_chars(char* str) {
+    free(str);
+}
+
+int main(int argc, char *argv[]) {
+    if (initFileSystem() == 1) {
+        return 1;
+    }
+
     mkdir("Folder 1"); 
     mkdir("Folder 2");
+    
+    ls();
+    
     cd("Folder 1");
 
-    mkf("arxivo","holasoyvitaestoyprobandolosarchivoscontamagno4");
+    mkf("arxivo", "holasoyvitaestoyprobandolosarchivoscontamagno4");
 
     ls();
 
-    //Hemos de liberar el puntero al archivo despues de imprimirlo ya que tenemos que darle memoria para poder
-    //pasarlo entre funciones.
-    
     char* toPrintCat = cat("arxivo");
-    printf("Arch1: %s\n", toPrintCat);
-    if(checkBeforeCat){
+    printf("Contenido de arxivo: %s\n", toPrintCat);
+    if (checkBeforeCat) {
         free(toPrintCat);
         checkBeforeCat = 0;
     }
-    
-
-
-    //rmf("arxivo");
-
+	
+	rmf("arxivo");
+	
+	ls();
+	
     cd("..");
-    printf("Hola");
-    fflush(stdout);
+    
+    ls();
+    
     rmdir("Folder 1");
+    
     ls();
 
-    //showDate(rootElement->fecha);
-
-    if(cleanFileSystem()==1){return 1;}
+    if (cleanFileSystem() == 1) {
+        return 1;
+    }
 
     printf("FileSystem closing propperly.\n");
     return 0;
 }
+
