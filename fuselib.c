@@ -1,10 +1,7 @@
-//#define FUSE_USE_VERSION 26
-
 #include "fuseHeaders.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <fuse.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -37,6 +34,7 @@ int initFileSystem (){
     rootElement->clusterPointer = NULL;
 
     clusterActualSize++;
+    checkBeforeCat = 0;
     currentDir = rootElement;            //Root es el directorio actual.
 
     return 0;
@@ -203,9 +201,9 @@ int mkf(char dir[LONGESTFILENAME], char* content){
         strcpy(dataCopy -> infoFichero, content);
         return 0;
     }
-    printf("Data to fill: %u clusters...\n",dataToFill);
     unsigned int i;
     newElement -> clusterPointer = malloc(sizeof(myData));
+    if(newElement -> clusterPointer == NULL) return 1;
     myData* dataCopy = (myData*) &(newElement -> clusterPointer);
     for(i=0 ; i < dataToFill; i++){
         unsigned int w;
@@ -213,56 +211,17 @@ int mkf(char dir[LONGESTFILENAME], char* content){
             for (w = 0; w < strlen(content)%BYTESPERCLUSTER ; w++){
                 dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
             }
-
             dataCopy -> next = dataCopy;
         }else{
             for (w = 0; w < BYTESPERCLUSTER ; w++){
                 dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
             }
             dataCopy -> next = (myData*) malloc(sizeof(myData));
+            if(dataCopy -> next == NULL) return 1;
             dataCopy = dataCopy -> next;
         }
-        
     }
     return 0;
-
-
-
-    /*
-
-    printf("Memoria declarada: %p\n",&(newElement -> clusterPointer));
-
-    //Puntero casteado a la estructura correspondiente. Hacemos copia de la dirección para no perderlo
-    myData* controlData = (myData*) &(newElement -> clusterPointer);
-
-    printf("Valor en memoria de controlData: %p\n",&controlData);
-
-    //Si el tamagno del contenido es menor que el tamagno de 1 cluster lo copiamos en 1 cluster y ponemos el puntero
-    //mirando a sí mismo para indicar que ha terminado.
-    unsigned int i;
-    for(i=0; i < dataToFill; i++ ){
-        //Última iteración
-        printf("Entro aqui");
-        if(i == dataToFill - 1 ){
-            strncpy(controlData -> infoFichero, &content[i*BYTESPERCLUSTER], strlen(content)%BYTESPERCLUSTER);
-            printf("\nGuardando string, puntero a myData: |%p\n",controlData);
-            fflush(stdout);
-            //printf("Infofichero: %s\n",getTextFrom(controlData));
-            controlData -> next = controlData;//Cuando el puntero se apunta a sí mismo indica fin del archivo.
-            return 0;
-        }else{
-            printf("Pero no aqui");
-            fflush(stdout);
-            strncpy(controlData -> infoFichero, &content[i*BYTESPERCLUSTER], BYTESPERCLUSTER);
-            controlData -> next =(myData*) malloc(sizeof(myData));
-            if(controlData -> next == NULL){printf("No se ha podido reservar memoria...");return 1;}
-            controlData = controlData -> next;
-        }
-    }
-    
-    printf("No se deberia llegar aqui");
-    return 1;
-    */
 }
 
 void remove_allocated_chars(char *str) {
@@ -309,7 +268,7 @@ char* cat(char filename[LONGESTFILENAME]){
             strcat(buffer, textoCat -> infoFichero);
             textoCat = textoCat -> next;
         }
-
+        checkBeforeCat = 1;
         return buffer;
     }else{
         return "Logic issue, this message shouldn't be shown in screen";
@@ -317,7 +276,50 @@ char* cat(char filename[LONGESTFILENAME]){
 
 }
 
-int rmf(char dir[LONGESTFILENAME]){
+int rmf(char filename[LONGESTFILENAME]){
+    // Buscar el directorio en el directorio actual
+    sonElemList* prev = NULL;
+    sonElemList* current = (sonElemList*) currentDir -> clusterPointer;
+
+    while (current != NULL && strcmp(current->elemento->filename, filename) != 0) {
+        prev = current;
+        current = current->next;
+    }
+
+    // Si no se encontró el directorio
+    if (current == NULL) {
+        printf("Directorio no encontrado.\n");
+        return 1;
+    }
+
+    // Comprobar si el directorio está vacío
+    if (current->elemento->clusterPointer == NULL) {
+        printf("Fallo en la estructura de datos. No hay datos asociados al fichero...\n");
+        return 1;
+    }
+
+    // Eliminar el directorio de la lista de hijos
+    if (prev == NULL) {
+        currentDir->clusterPointer = current->next;
+    } else {
+        prev->next = current->next;
+    }
+
+    myData* copy = (myData*) &(current -> elemento -> clusterPointer);
+    
+    while(copy -> next != copy){
+        myData* previo = (myData*) copy;
+        copy = copy -> next;
+        free(previo);
+    }
+
+    // Liberar la memoria del directorio
+    free(current->elemento);
+    free(current);
+
+    clusterActualSize--;
+
+    printf("Fichero %s eliminado.\n", filename);
     return 0;
 }
 
@@ -403,28 +405,33 @@ int main(int argc, char *argv[]){
 
     //Error in memory allocation.
     if(initFileSystem()==1){return 1;}
-    /*
+    
     mkdir("Folder 1"); 
     mkdir("Folder 2");
-    
-    ls();
-
     cd("Folder 1");
-    */
 
     mkf("arxivo","holasoyvitaestoyprobandolosarchivoscontamagno4");
-
-    printf("Holi\n");
-    fflush(stdout);
 
     ls();
 
     //Hemos de liberar el puntero al archivo despues de imprimirlo ya que tenemos que darle memoria para poder
     //pasarlo entre funciones.
+    
     char* toPrintCat = cat("arxivo");
     printf("Arch1: %s\n", toPrintCat);
-    free(toPrintCat);
+    if(checkBeforeCat){
+        free(toPrintCat);
+        checkBeforeCat = 0;
+    }
+    
 
+
+    //rmf("arxivo");
+
+    cd("..");
+    printf("Hola");
+    fflush(stdout);
+    rmdir("Folder 1");
     ls();
 
     //showDate(rootElement->fecha);

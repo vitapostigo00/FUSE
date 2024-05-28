@@ -11,7 +11,7 @@
 //Constantes:
 #define LONGESTFILENAME 32
 #define MAXCLUSTERSIZE  65536       //2^16 (FAT16)
-#define BYTESPERCLUSTER 4//32768       //32KB por cluster cambiado a 4 para pruebas
+#define BYTESPERCLUSTER 32768       //32KB por cluster cambiado a 4 para pruebas
 
 typedef struct ClusterElement{
     struct ClusterElement* fatherDir;       // Solo hay un padre por directorio.
@@ -35,6 +35,8 @@ typedef struct Data{
 //Variables globales: (inicializado en init)
 unsigned int clusterActualSize;
 unsigned int dataActualSize;
+
+unsigned short checkBeforeCat;
 
 clustElem* rootElement = NULL;
 clustElem* currentDir = NULL;

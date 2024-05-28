@@ -151,7 +151,7 @@ static int my_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
-    sonElemList *child = (sonElemList *)dir->clusterPointer;
+    sonElemList *child = (sonElemList *)dir -> clusterPointer;
     while (child != NULL) {
         filler(buf, child->elemento->filename + 1, NULL, 0);
         child = child->next;
