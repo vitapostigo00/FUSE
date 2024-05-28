@@ -192,40 +192,39 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     controlP -> next = NULL;
     controlP -> elemento = newElement;
 
-    newElement -> clusterPointer = malloc(sizeof(myData));
-    if(newElement -> clusterPointer == NULL) return 1;
-
-    myData* dataCopy = &(newElement -> clusterPointer);
 
     //Si cabe en una sola estructura... (ha de ser menor estricto para poder guardar el \0)
     if(strlen(content) < BYTESPERCLUSTER){
-        //Reservamos memoria para el primer fragmento de Data:
+        newElement -> clusterPointer = malloc(sizeof(myData));
+        if(newElement -> clusterPointer == NULL) return 1;
+
+        myData* dataCopy = (myData*) &(newElement -> clusterPointer);
         dataCopy -> next = dataCopy;
         strcpy(dataCopy -> infoFichero, content);
         return 0;
     }
-    unsigned i;
-    //Llegamos aqui si el numero de caracteres supera BYTESPERCLUSTER 
-    for(i=0; i < dataToFill; i++){//Mirar si es < o <=
-        //Copiamos los BYTESPERCLUSTER primeros caracteres, los borramos y repetimos
-        
-        if(i == dataToFill-1){//ultima iteracion
-            strcpy(dataCopy -> infoFichero, content);
-            printf("Parte: %u: |%s\n",i, dataCopy -> infoFichero);
+    printf("Data to fill: %u clusters...\n",dataToFill);
+    unsigned int i;
+    newElement -> clusterPointer = malloc(sizeof(myData));
+    myData* dataCopy = (myData*) &(newElement -> clusterPointer);
+    for(i=0 ; i < dataToFill; i++){
+        unsigned int w;
+        if(i+1 == dataToFill){
+            for (w = 0; w < strlen(content)%BYTESPERCLUSTER ; w++){
+                dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
+            }
+
             dataCopy -> next = dataCopy;
         }else{
-            strncpy(dataCopy -> infoFichero, content, BYTESPERCLUSTER);
-            printf("Parte: %u: |%s\n",i,dataCopy -> infoFichero);
-            //remove_allocated_chars(content);
+            for (w = 0; w < BYTESPERCLUSTER ; w++){
+                dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
+            }
             dataCopy -> next = (myData*) malloc(sizeof(myData));
-            if(dataCopy -> next == NULL) return 1;
             dataCopy = dataCopy -> next;
         }
-        printf("Content a escribir todavia: %s\n", content);
         
     }
-    return 1;
-    
+    return 0;
 
 
 
@@ -413,7 +412,7 @@ int main(int argc, char *argv[]){
     cd("Folder 1");
     */
 
-    mkf("arxivo","kkwetee");
+    mkf("arxivo","holasoyvitaestoyprobandolosarchivoscontamagno4");
 
     printf("Holi\n");
     fflush(stdout);
