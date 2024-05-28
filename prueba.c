@@ -21,6 +21,8 @@ int initFileSystem() {
     }
 
     unsigned long fileSize = getFileSize(file);
+    printf("File size: %lu\n", fileSize);
+
     char *buffer = (char*)malloc(fileSize);
     if (!buffer) {
         perror("Error al asignar memoria para el buffer");
@@ -36,31 +38,73 @@ int initFileSystem() {
 
     char *ptr = buffer;
     while (ptr < buffer + fileSize) {
-        int pathLength = *(int*)ptr;
-        ptr += sizeof(int);
+        // Verificar si es el final del archivo
+        if (strncmp(ptr, "/0/0/0/0/0/0/0/0", 16) == 0) {
+            break;
+        }
 
+        // Leer la longitud del path
+        char *sep = strchr(ptr, '/');
+        int pathLength = (int)(sep - ptr);
         char *path = (char*)malloc(pathLength + 1);
         strncpy(path, ptr, pathLength);
         path[pathLength] = '\0';
-        ptr += pathLength;
+        ptr = sep + 1; // Mover el puntero después del '/'
+
+        printf("Path length: %d\n", pathLength);
+        printf("Path: %s\n", path);
 
         elementoTabla *newElement = (elementoTabla*)malloc(sizeof(elementoTabla));
+        if (!newElement) {
+            perror("Error al asignar memoria para el elemento de la tabla");
+            free(path);
+            free(buffer);
+            return -1;
+        }
+
         newElement->path = path;
         newElement->next = NULL;
+        newElement->data = NULL;
 
-        if (ptr < buffer + fileSize) {
-            unsigned long dataSize = *(unsigned long*)ptr;
-            ptr += sizeof(unsigned long);
+        if (*ptr == '?') {
+            ptr += 1; // Saltar el '?'
+
+            // Leer la longitud del path del archivo
+            sep = strchr(ptr, '/');
+            int filePathLength = (int)(sep - ptr);
+            ptr = sep + 1; // Mover el puntero después del '/'
+
+            // Leer el tamaño de los datos
+            sep = strchr(ptr, '/');
+            unsigned long dataSize = strtoul(ptr, NULL, 10);
+            ptr = sep + 1; // Mover el puntero después del '/'
+
+            printf("Data size: %lu\n", dataSize);
 
             char *data = (char*)malloc(dataSize);
+            if (!data) {
+                perror("Error al asignar memoria para los datos");
+                free(newElement);
+                free(path);
+                free(buffer);
+                return -1;
+            }
+
             memcpy(data, ptr, dataSize);
             ptr += dataSize;
 
             newElement->data = (TFiles*)malloc(sizeof(TFiles));
+            if (!newElement->data) {
+                perror("Error al asignar memoria para TFiles");
+                free(data);
+                free(newElement);
+                free(path);
+                free(buffer);
+                return -1;
+            }
+
             newElement->data->size = dataSize;
             newElement->data->data = data;
-        } else {
-            newElement->data = NULL;
         }
 
         if (head == NULL) {
@@ -69,6 +113,10 @@ int initFileSystem() {
         } else {
             current->next = newElement;
             current = newElement;
+        }
+
+        if (*ptr == '|') {
+            ptr += 1;
         }
     }
 
@@ -92,44 +140,7 @@ void printFileSystem(elementoTabla *table) {
     }
 }
 
-void createFileSystemBin() {
-    FILE *file = fopen("filesystem.bin", "wb");
-    if (!file) {
-        perror("Error al crear el fichero binario");
-        exit(-1);
-    }
-
-    // Primera entrada
-    int pathLength1 = strlen("/file1.txt");
-    printf("Long: %i\n",pathLength1);
-    char path1[] = "/file1.txt";
-    unsigned long dataSize1 = strlen("Hello, World!");
-    char data1[] = "Hello, World!";
-
-    fwrite(&pathLength1, sizeof(int), 1, file);
-    fwrite(path1, sizeof(char), pathLength1, file);
-    fwrite(&dataSize1, sizeof(unsigned long), 1, file);
-    fwrite(data1, sizeof(char), dataSize1, file);
-
-    // Segunda entrada
-    int pathLength2 = strlen("/file2.txt");
-    char path2[] = "/file2.txt";
-    unsigned long dataSize2 = strlen("Goodbye!");
-    char data2[] = "Goodbye!";
-
-    fwrite(&pathLength2, sizeof(int), 1, file);
-    fwrite(path2, sizeof(char), pathLength2, file);
-    fwrite(&dataSize2, sizeof(unsigned long), 1, file);
-    fwrite(data2, sizeof(char), dataSize2, file);
-
-    fclose(file);
-    printf("filesystem.bin creado exitosamente.\n");
-}
-
 int main() {
-    // Crear el archivo filesystem.bin
-    createFileSystemBin();
-
     // Inicializa el sistema de archivos
     if (initFileSystem() == 0) {
         printf("Sistema de archivos inicializado correctamente.\n");
