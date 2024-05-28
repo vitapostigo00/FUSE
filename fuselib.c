@@ -42,7 +42,7 @@ int initFileSystem (){
 }
 
 
-int mkdir(char newDir[LONGESTFILENAME-1]){
+int makedir(char newDir[LONGESTFILENAME-1]){
 
     //habrá que mirar si es relativa o absoluta la dirección viendo si se pasa un parámetro o 2 (creo).
     if(newDir[0]=='/'){
@@ -210,15 +210,16 @@ int mkf(char dir[LONGESTFILENAME], char* content){
     for(i=0 ; i < dataToFill; i++){
         unsigned int w;
         if(i+1 == dataToFill){
-            for (w = 0; w < strlen(content)%BYTESPERCLUSTER ; w++){
+            for (w = 0; w < (strlen(content)%BYTESPERCLUSTER)-1 ; w++){
                 dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
             }
-
+            dataCopy -> infoFichero[BYTESPERCLUSTER-1] = '\0';
             dataCopy -> next = dataCopy;
         }else{
-            for (w = 0; w < BYTESPERCLUSTER ; w++){
+            for (w = 0; w < BYTESPERCLUSTER-1 ; w++){
                 dataCopy -> infoFichero[w] = content[i*BYTESPERCLUSTER+w];
             }
+            dataCopy -> infoFichero[BYTESPERCLUSTER-1] = '\0';
             dataCopy -> next = (myData*) malloc(sizeof(myData));
             if(dataCopy -> next == NULL) return 1;
             dataCopy = dataCopy -> next;
@@ -448,18 +449,14 @@ int main(int argc, char *argv[]){
     //Error in memory allocation.
     if(initFileSystem()==1){return 1;}
     
-    mkdir("Folder 1"); 
-    mkdir("Folder 2");
-
-
+    makedir("Folder 1"); 
+    makedir("Folder 2");
 
     cd("Folder 1");
 
+    mkf("arxivo","holasoyvitaestoyprobandolosarchivoscontamagno4\n");
 
-    mkf("arxivo","holasoyvitaestoyprobandolosarchivoscontamagno4");
-
-
-
+;
 
     ls();
 
@@ -473,14 +470,14 @@ int main(int argc, char *argv[]){
         checkBeforeCat = 0;
     }
     
+    rmf("arxivo");
 
-
-    //rmf("arxivo");
+    ls();
 
     cd("..");
-    printf("Hola");
-    fflush(stdout);
+
     rmdir("Folder 1");
+
     ls();
 
     //showDate(rootElement->fecha);
@@ -488,5 +485,6 @@ int main(int argc, char *argv[]){
     if(cleanFileSystem()==1){return 1;}
 
     printf("FileSystem closing propperly.\n");
+    //fflush(stdout);
     return 0;
 }

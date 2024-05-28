@@ -43,7 +43,7 @@ clustElem* currentDir = NULL;
 
 void showDate(struct tm time);
 int initFileSystem ();
-int mkdir(char newDir[LONGESTFILENAME-1]);
+int makedir(char newDir[LONGESTFILENAME-1]);
 void ls();
 void cd(char dir[LONGESTFILENAME-1]);
 int mkf(char dir[LONGESTFILENAME], char* content);
