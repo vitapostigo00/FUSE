@@ -12,7 +12,7 @@
 
 typedef struct Files{
     unsigned long size;       // Tamaño de los datos binarios
-    char *data;               // Puntero a los datos binarios
+    char* binario;               // Puntero a los datos binarios
 } TFiles;
 
 typedef struct tabla{
@@ -35,6 +35,9 @@ int subdir_inmediato(const char*,const char*);
 char* ultimoComponente(char*);
 char* ls();
 void totalsize();
+int guardarDatos(char*, char* , int);
+void copiarDesdeArchivo(const char*, char*);
+int devolverArchivo(char*,char*);
 
 #endif // FUSEHEADERS_H
 
