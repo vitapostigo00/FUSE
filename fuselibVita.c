@@ -127,7 +127,7 @@ int subdir_inmediato(const char* parent,const char* child) {
     // Asegurarse de que 'child' comienza con 'parent' y que el siguiente caracter es '/'
     if (strncmp(parent, child, parent_len) == 0 && child[parent_len] == '/') {
         // Verificar que solo hay un nivel de directorio de diferencia
-        char* rest = child + parent_len + 1;
+        const char* rest = child + parent_len + 1;
         // Verificar que no hay más slashes después del primer nivel
         return (strchr(rest, '/') == NULL || strchr(rest, '/') == rest + strlen(rest) - 1);
     }
@@ -155,39 +155,24 @@ char* ultimoComponente(char* path) {
 
 char* ls(){ 
     char* retorno = malloc(sizeof(char) * LONGESTPATHSIZE); // Reservar memoria para retorno
+    
     if (retorno == NULL) {
         perror("Error al asignar memoria para retorno");
         return NULL;
     }
+
     retorno[0] = '\0'; // Inicializar retorno como una cadena vacía
 
-    elementoTabla* paco = globalTable->next; // No necesitas hacer un casting innecesario aquí
+    elementoTabla* copy = globalTable->next; // No necesitas hacer un casting innecesario aquí
 
-    printf("GlobalTable p next: %s\n", globalTable->path);
-    printf("String 1: %s\n", paco->path);
-    fflush(stdout);
-
-    while (paco != NULL) {
-        printf("String 1: %s\n", paco->path);
-        fflush(stdout);
-        if (paco->path == NULL) {
-            printf("LOCOO\n");
-            fflush(stdout);
-        } else {
-            printf("LOCOO2\n");
-            fflush(stdout);
-        }
-        if (subdir_inmediato(currentPath, paco->path) == 0) {
-            printf("Copia path: %s\n", paco->path);
-            fflush(stdout); //ultimoComponente(copia -> path)
+    while (copy != NULL) {
+        if (subdir_inmediato(currentPath, copy->path) == 0) {
             strcat(retorno, "Juan");
             strcat(retorno, "   ");
-            printf("Yo si");
-        } else {
-            printf("Yo no");
+        }else{
+            printf("Hola\n");
         }
-        fflush(stdout);
-        paco = paco->next;
+        copy = copy->next;
     }
 
     printf("%s\n", retorno);
@@ -202,27 +187,13 @@ int main(int argc, char **argv) {
     int initialization;
 
     initialization = initEmptyFilesystem();
-    /*
-    else{
-        initialization = initFilesystemFromBinary();
-    }*/
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
         createDir("Dir33");
         createDir("Dir2");
-        printf("eyy");
-        fflush(stdout);
 
-        printf("GT: %p\n",&globalTable); 
-
-        printf("Valor nodo 2: %s\n",globalTable -> next -> path); 
-        printf("Valor nodo 3: %s\n",globalTable -> next -> next -> path); 
         ls();
-        //ls();
-        fflush(stdout);
-        //char* copiaLs = ls();
-        //printf("%s",copiaLs);
     }else{
         printf("Error at init, aborpting.\n");
     }
