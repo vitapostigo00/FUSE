@@ -65,7 +65,6 @@ int initFromBin(char* myFile) {
         // Inicializa el buffer y el índice para cada nuevo bloque
         memset(numberStr, 0, sizeof(numberStr));
         index = 0;
-    	
         
         // Leer caracteres hasta encontrar '/'
         while (fread(&firstChar, sizeof(char), 1, file) == 1 && firstChar != '/') {
@@ -96,6 +95,7 @@ int initFromBin(char* myFile) {
             fclose(file);
             return -1;
         }
+
         data[numChars] = '\0';
         
         int aborpt = createRawEntry(data);
@@ -117,9 +117,10 @@ int initFromBin(char* myFile) {
 
 
 void totalsize(){
-    int contador = 1;
+    int contador = 0;
     elementoTabla* copia = (elementoTabla*) globalTable;
     while(copia != NULL ){
+        printf("Nombre: %s\n",copia->path);
         copia = copia -> next;
         contador++;
     }
@@ -346,10 +347,12 @@ int main(int argc, char **argv) {
 
     int initialization = initFromBin("filesystem.bin");
 
+    totalsize();
+
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
 
-        //createDir("Dir48");
+        createDir("Dir48");
         createDir("dir33");
         createDir("dir59");
 
