@@ -27,20 +27,159 @@ int initEmptyFilesystem(){
     return 0;
 }
 
+
+int initFromBin(char* myFile) {
+    if(initEmptyFilesystem()==1){
+        return 1;
+    }
+
+    FILE *file;
+    char firstChar;
+    char numberStr[256];  // Buffer para almacenar el número
+    int index;
+
+    // Intenta abrir el archivo en modo binario de lectura
+    file = fopen(myFile, "rb");
+    if (file == NULL) {
+        printf("Error al abrir el archivo.\n");
+        return -1;  // Error al abrir el archivo
+    }
+
+    // Lee y procesa bloques hasta encontrar un bloque que empieza con '?'
+    while (1) {
+        if (fread(&firstChar, sizeof(char), 1, file) != 1) {
+            printf("Error o fin del archivo alcanzado inesperadamente.\n");
+            fclose(file);
+            return -1;
+        }
+
+        if (firstChar == '?') {
+            printf("Encontrado el caracter de terminacion '?'.\n");
+            break;
+        } else if (firstChar != '|') {
+            printf("Formato de archivo inesperado, se esperaba '|', se encontro: %c\n", firstChar);
+            fclose(file);
+            return -1;
+        }
+
+        // Inicializa el buffer y el índice para cada nuevo bloque
+        memset(numberStr, 0, sizeof(numberStr));
+        index = 0;
+    	
+        
+        // Leer caracteres hasta encontrar '/'
+        while (fread(&firstChar, sizeof(char), 1, file) == 1 && firstChar != '/') {
+            if (index < sizeof(numberStr) - 1) {
+                numberStr[index++] = firstChar;
+            }
+        }
+        numberStr[index] = '\0';
+
+        if (firstChar != '/') {
+            printf("No se encontro el caracter '/' despues del numero.\n");
+            fclose(file);
+            return -1;
+        }
+
+        long numChars = atol(numberStr);
+
+        // Reservar memoria y leer la cantidad de caracteres especificada
+        char *data = malloc(numChars + 1);
+        if (data == NULL) {
+            printf("No se pudo reservar memoria.\n");
+            fclose(file);
+            return -1;
+        }
+        if (fread(data, sizeof(char), numChars, file) != numChars) {
+            printf("No se pudo leer la cantidad esperada de caracteres.\n");
+            free(data);
+            fclose(file);
+            return -1;
+        }
+        data[numChars] = '\0';
+        
+        int aborpt = createRawEntry(data);
+        if(aborpt==1){
+            printf("Fallo en el formato de entrada: \n");
+            return 1;
+        }
+        
+
+        free(data);
+        
+    }
+
+    // Cierra el archivo
+    fclose(file);
+    return 0;  // Éxito
+}
+
+
+
+void totalsize(){
+    int contador = 1;
+    elementoTabla* copia = (elementoTabla*) globalTable;
+    while(copia != NULL ){
+        copia = copia -> next;
+        contador++;
+    }
+    printf("Totasize: %i\n",contador);
+}
+
 elementoTabla* pathExists(char* path){
-    elementoTabla* copia = (elementoTabla*) &globalTable;
+    elementoTabla* copia = (elementoTabla*) globalTable;
     while(copia != NULL && strcmp(copia -> path, path) != 0){
         copia = copia -> next;
     }
     return copia; //Devuelve NULL si no existe
 }
-elementoTabla* ultimoElemento(){
-    elementoTabla* copia = (elementoTabla*) &globalTable;
-    while(copia -> next != NULL){
-        copia = copia -> next;
+////////////////////////////////////////////////////////////
+int createRawEntry(char* newEntry){
+
+    // Crear la ruta completa del nuevo directorio
+    char* newString = malloc(sizeof(char)*(strlen(currentPath)+strlen(newEntry)+2));
+    if (newString == NULL) {
+        perror("Error al asignar memoria para newString");
+        return 1;
     }
-    return copia;
+
+    strcpy(newString,"/");
+    strcat(newString, newEntry);
+    
+
+    // Encontrar el último elemento en la tabla global
+    elementoTabla* toAppend = globalTable;
+    while (toAppend->next != NULL){
+        toAppend = toAppend->next;
+    }
+
+    // Crear un nuevo elemento para el nuevo directorio
+    toAppend->next = malloc(sizeof(elementoTabla));
+    if (toAppend->next == NULL) {
+        perror("Error al asignar memoria para nuevo elemento de la tabla");
+        free(newString);
+        return 1;
+    }
+    toAppend = toAppend->next;
+
+    // Asignar la ruta al nuevo elemento
+    toAppend->path = malloc(sizeof(char)*(strlen(newString)+1));
+    if (toAppend->path == NULL) {
+        perror("Error al asignar memoria para la ruta del nuevo elemento");
+        free(toAppend->next);
+        free(newString);
+        return 1;
+    }
+    strcpy(toAppend->path, newString);
+    free(newString);
+
+    // Inicializar los otros campos del nuevo elemento
+    toAppend->data = NULL;
+    toAppend->next = NULL;
+
+    return 0;
 }
+////////////////////////////////////////////////////////////
 
 char* checksPrevios(char* newDir){
     if(strchr(newDir, '/')){
@@ -71,12 +210,13 @@ int createDir(char* newDir){
         perror("Error al asignar memoria para newString");
         return 1;
     }
+
     strcpy(newString, currentPath);
     strcat(newString, newDir);
     strcat(newString, "/");
 
     // Verificar si el directorio ya existe
-    if (pathExists(newDir) != NULL){
+    if (pathExists(newString) != NULL){
         printf("El elemento a crear ya existe\n");
         free(newString);
         return 1;
@@ -178,18 +318,43 @@ char* ls(){
     return retorno;
 }
 
+char* ls2(){ 
+    char* retorno = malloc(sizeof(char) * LONGESTPATHSIZE); // Reservar memoria para retorno
+    
+    if (retorno == NULL) {
+        perror("Error al asignar memoria para retorno");
+        return NULL;
+    }
+
+    retorno[0] = '\0'; // Inicializar retorno como una cadena vacía
+
+    elementoTabla* copy = globalTable->next; // No necesitas hacer un casting innecesario aquí
+
+    while (copy != NULL) {
+        strcat(retorno, ultimoComponente(copy->path));
+        strcat(retorno, "   ");
+        copy = copy->next;
+    }
+
+    printf("%s\n", retorno);
+
+    return retorno;
+}
+
 
 int main(int argc, char **argv) {
-    int initialization;
 
-    initialization = initEmptyFilesystem();
+    int initialization = initFromBin("filesystem.bin");
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
-        createDir("Dir33");
-        createDir("Dir2");
+
+        //createDir("Dir48");
+        createDir("dir33");
+        createDir("dir59");
 
         ls();
+
     }else{
         printf("Error at init, aborpting.\n");
     }

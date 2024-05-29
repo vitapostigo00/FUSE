@@ -25,6 +25,17 @@ typedef struct tabla{
 elementoTabla *globalTable;
 char* currentPath;
 
+int initEmptyFilesystem();
+int initFromBin(char*);
+elementoTabla* pathExists(char*);
+int createRawEntry(char*);
+char* checksPrevios(char*);
+int createDir(char*);
+int subdir_inmediato(const char*,const char*);
+char* ultimoComponente(char*);
+char* ls();
+void totalsize();
+
 #endif // FUSEHEADERS_H
 
 /*
