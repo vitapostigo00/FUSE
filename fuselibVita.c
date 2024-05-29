@@ -166,11 +166,9 @@ char* ls(){
     elementoTabla* copy = globalTable->next; // No necesitas hacer un casting innecesario aquí
 
     while (copy != NULL) {
-        if (subdir_inmediato(currentPath, copy->path) == 0) {
-            strcat(retorno, "Juan");
+        if (subdir_inmediato(currentPath, copy->path)) {
+            strcat(retorno, ultimoComponente(copy->path));
             strcat(retorno, "   ");
-        }else{
-            printf("Hola\n");
         }
         copy = copy->next;
     }
@@ -179,8 +177,6 @@ char* ls(){
 
     return retorno;
 }
-
-
 
 
 int main(int argc, char **argv) {

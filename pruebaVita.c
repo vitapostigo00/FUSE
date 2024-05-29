@@ -1,36 +1,36 @@
 #include <stdio.h>
 #include <string.h>
-#include <libgen.h>
 #include <stdlib.h>
 
-// Función para obtener solo el nombre del último elemento de la ruta
-char* get_last_component(char* path) {
-    // Hacer una copia de la ruta para no modificar la original
-    char* path_copy = strdup(path);
-    if (path_copy == NULL) {
-        perror("Error al duplicar la ruta");
-        return NULL;
+
+int is_immediate_subdir(const char* parent, const char* child) {
+    size_t parent_len = strlen(parent);
+    size_t child_len = strlen(child);
+
+    // Eliminar el slash final de 'parent' si existe
+    if (parent[parent_len - 1] == '/') {
+        parent_len--;
     }
 
-    // Utilizar basename para obtener el último componente de la ruta
-    char* last_component = basename(path_copy);
+    // Asegurarse de que 'child' comienza con 'parent' y que el siguiente caracter es '/'
+    if (strncmp(parent, child, parent_len) == 0 && child[parent_len] == '/') {
+        // Verificar que solo hay un nivel de directorio de diferencia
+        char* rest = child + parent_len + 1;
+        // Verificar que no hay más slashes después del primer nivel
+        return (strchr(rest, '/') == NULL || strchr(rest, '/') == rest + strlen(rest) - 1);
+    }
 
-    // Hacer otra copia para retornar, porque path_copy será liberada
-    char* result = strdup(last_component);
-    free(path_copy);  // Liberar la memoria de la copia original
-
-    return result;
+    return 0;
 }
 
 int main() {
-    char* paths[] = {"/home/user/Documentos/", "/home/user/Documentos/juan", NULL};
+    char* parent_path = "/";
+    char* child_path = "/Dir33/";
 
-    for (int i = 0; paths[i] != NULL; i++) {
-        char* last_component = get_last_component(paths[i]);
-        if (last_component) {
-            printf("El último componente de '%s' es: '%s'\n", paths[i], last_component);
-            free(last_component);  // Liberar la memoria del resultado
-        }
+    if (is_immediate_subdir(parent_path, child_path)) {
+        printf("'%s' es un subdirectorio inmediato de '%s'\n", child_path, parent_path);
+    } else {
+        printf("'%s' NO es un subdirectorio inmediato de '%s'\n", child_path, parent_path);
     }
 
     return 0;
