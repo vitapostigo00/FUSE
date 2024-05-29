@@ -58,59 +58,63 @@ char* checksPrevios(char* newDir){
 
 
 int createDir(char* newDir){
-    char* msgError = checksPrevios(newDir);
-    
-    if(msgError!=NULL){
-        printf("%s",msgError);
+    // Verificar errores previos
+    char* msgError = checksPrevios(newDir);   
+    if(msgError != NULL){
+        printf("%s\n", msgError);
         return 1;
     }
 
+    // Crear la ruta completa del nuevo directorio
     char* newString = malloc(sizeof(char)*(strlen(currentPath)+strlen(newDir)+2));
-    strcpy(newString,currentPath);
+    if (newString == NULL) {
+        perror("Error al asignar memoria para newString");
+        return 1;
+    }
+    strcpy(newString, currentPath);
     strcat(newString, newDir);
     strcat(newString, "/");
 
-    if(pathExists(newDir)!=NULL){
-        printf("El elemento a crear ya existe");
+    // Verificar si el directorio ya existe
+    if (pathExists(newDir) != NULL){
+        printf("El elemento a crear ya existe\n");
         free(newString);
         return 1;
     }
 
-    elementoTabla* toAppend = (elementoTabla*) &globalTable;
-
-    printf("Header tabla global: %p\n", &globalTable);
-    printf("Header toAppend %p\n", toAppend);
-    printf("GlobalNext:%p\n",toAppend->next);
-
-    while(toAppend -> next != NULL){
-        printf("macarrones\n");
-        toAppend = toAppend -> next;
+    // Encontrar el último elemento en la tabla global
+    elementoTabla* toAppend = globalTable;
+    while (toAppend->next != NULL){
+        toAppend = toAppend->next;
     }
 
-    printf("Header tabla global: %p\n", &globalTable);
-    printf("Header toAppend %p\n", toAppend);
+    // Crear un nuevo elemento para el nuevo directorio
+    toAppend->next = malloc(sizeof(elementoTabla));
+    if (toAppend->next == NULL) {
+        perror("Error al asignar memoria para nuevo elemento de la tabla");
+        free(newString);
+        return 1;
+    }
+    toAppend = toAppend->next;
 
-    toAppend -> next = (elementoTabla*) malloc(sizeof(elementoTabla));
-    printf("PostMalloc:%p\n",toAppend->next);
-
-    toAppend = toAppend -> next;
-
-    printf("Post Next:%p\n",toAppend);
-
-    toAppend -> path = malloc(sizeof(char)*(strlen(newString)+2));
-    printf("Path: %p\n",toAppend -> path);
-    strcpy(toAppend -> path,newString);
+    // Asignar la ruta al nuevo elemento
+    toAppend->path = malloc(sizeof(char)*(strlen(newString)+1));
+    if (toAppend->path == NULL) {
+        perror("Error al asignar memoria para la ruta del nuevo elemento");
+        free(toAppend->next);
+        free(newString);
+        return 1;
+    }
+    strcpy(toAppend->path, newString);
     free(newString);
-    printf("Path: %p\n",toAppend -> path);
 
-    printf("Path:%s\n",toAppend -> path);
-
-    //printf("Path: %s\n",toAppend -> path);
-    toAppend -> data = NULL;
-    toAppend -> next = NULL;
+    // Inicializar los otros campos del nuevo elemento
+    toAppend->data = NULL;
+    toAppend->next = NULL;
 
     return 0;
 }
+
 
 int subdir_inmediato(const char* parent,const char* child) {
     size_t parent_len = strlen(parent);
@@ -150,44 +154,47 @@ char* ultimoComponente(char* path) {
 }
 
 char* ls(){ 
-    char* retorno="";
-    elementoTabla* paco = (elementoTabla*) (globalTable -> next);
+    char* retorno = malloc(sizeof(char) * LONGESTPATHSIZE); // Reservar memoria para retorno
+    if (retorno == NULL) {
+        perror("Error al asignar memoria para retorno");
+        return NULL;
+    }
+    retorno[0] = '\0'; // Inicializar retorno como una cadena vacía
 
+    elementoTabla* paco = globalTable->next; // No necesitas hacer un casting innecesario aquí
 
-    //printf("GlobalTable p : %p\n", &(globalTable));
-    printf("GlobalTable p next: %s\n", (globalTable->path));
-    printf("String 1: %s\n",paco -> path);
+    printf("GlobalTable p next: %s\n", globalTable->path);
+    printf("String 1: %s\n", paco->path);
     fflush(stdout);
-    //printf("String 1: %s\nString 2: %s\n",copia->path,copia->next->path);
-    printf("HOLAA\n");
-    fflush(stdout);
-    while(paco != NULL){
-        printf("HOLAA2\n");
+
+    while (paco != NULL) {
+        printf("String 1: %s\n", paco->path);
         fflush(stdout);
-        if(paco -> path == NULL){
+        if (paco->path == NULL) {
             printf("LOCOO\n");
             fflush(stdout);
-        }else{
+        } else {
             printf("LOCOO2\n");
             fflush(stdout);
         }
-        if(subdir_inmediato(currentPath,paco->path)==0){
-            printf("Copia path: %s\n",paco -> path);
-            fflush(stdout);//ultimoComponente(copia -> path)
+        if (subdir_inmediato(currentPath, paco->path) == 0) {
+            printf("Copia path: %s\n", paco->path);
+            fflush(stdout); //ultimoComponente(copia -> path)
             strcat(retorno, "Juan");
-            strcat(retorno,"   ");
+            strcat(retorno, "   ");
             printf("Yo si");
-        }else{
+        } else {
             printf("Yo no");
         }
         fflush(stdout);
-        paco = paco -> next;
+        paco = paco->next;
     }
 
-    printf("%s\n",retorno);
+    printf("%s\n", retorno);
 
     return retorno;
 }
+
 
 
 
@@ -210,6 +217,9 @@ int main(int argc, char **argv) {
         printf("GT: %p\n",&globalTable); 
 
         printf("Valor nodo 2: %s\n",globalTable -> next -> path); 
+        printf("Valor nodo 3: %s\n",globalTable -> next -> next -> path); 
+        ls();
+        //ls();
         fflush(stdout);
         //char* copiaLs = ls();
         //printf("%s",copiaLs);
