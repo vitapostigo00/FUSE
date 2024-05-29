@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <time.h>
 
+#define LONGESTPATHSIZE 100
+
 typedef struct Files{
     unsigned long size;       // Tamaño de los datos binarios
     char *data;               // Puntero a los datos binarios
@@ -19,6 +21,9 @@ typedef struct tabla{
     struct Files* data;
     struct tabla* next;
 }elementoTabla;
+
+elementoTabla *globalTable;
+char* currentPath;
 
 #endif // FUSEHEADERS_H
 
