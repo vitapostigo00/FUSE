@@ -1,54 +1,56 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-void remove_last_element(char *filename) {
-    if (filename == NULL || strlen(filename) == 0) {
-        return;
-    }
+#define MAX_RUTAS 100
+#define MAX_LONGITUD 256
 
-    // Find the length of the string
-    size_t len = strlen(filename);
+void reemplazar_rutas(const char *rutas[], int num_rutas, const char *directorio_a_reemplazar, const char *nueva_ruta, char rutas_actualizadas[][MAX_LONGITUD]) {
+    size_t longitud_directorio = strlen(directorio_a_reemplazar);
 
-    // Check if the string ends with a '/'
-    if (filename[len - 1] == '/') {
-        // Remove trailing '/'
-        filename[len - 1] = '\0';
-        len--;
-    }
-
-    // Find the last '/' in the string
-    for (size_t i = len - 1; i > 0; i--) {
-        if (filename[i] == '/') {
-            // If the only slash is at the beginning, keep it
-            if (i == 0) {
-                filename[1] = '\0';
-            } else {
-                filename[i + 1] = '\0';
+    for (int i = 0; i < num_rutas; i++) {
+        if (strncmp(rutas[i], directorio_a_reemplazar, longitud_directorio) == 0 &&
+            (rutas[i][longitud_directorio] == '/' || rutas[i][longitud_directorio] == '\0')) {
+            char *pos = strstr(rutas[i], directorio_a_reemplazar);
+            if (pos) {
+                size_t longitud_antes = pos - rutas[i];
+                strncpy(rutas_actualizadas[i], rutas[i], longitud_antes);
+                strcpy(rutas_actualizadas[i] + longitud_antes, nueva_ruta);
+                strcpy(rutas_actualizadas[i] + longitud_antes + strlen(nueva_ruta), pos + strlen(directorio_a_reemplazar));
             }
-            return;
+        } else {
+            strcpy(rutas_actualizadas[i], rutas[i]);
         }
     }
-
-    // If no '/' is found, make the filename "/"
-    strcpy(filename, "/");
 }
 
 int main() {
-    char path1[] = "/home/user/docs/folder/";
-    char path2[] = "/dir2/";
-    char path3[] = "/";
+    // Listado de todas las rutas en el sistema de archivos
+    const char *rutas[MAX_RUTAS] = {
+        "/aa/yy/zz",
+        "/xx/ya/zz/file1",
+        "/xx/yy/file2",
+        "/xx/yy",
+        "/xx/aa/bb",
+        "/xx/yy/zz/subdir/file3"
+    };
+    int num_rutas = 6;  // Número de rutas en la lista
 
-    printf("Original path1: %s\n", path1);
-    remove_last_element(path1);
-    printf("Modified path1: %s\n", path1);
+    // Directorio a reemplazar y la nueva ruta
+    char directorio_a_reemplazar[MAX_LONGITUD] = "/xx/yy";
+    char nueva_ruta[MAX_LONGITUD] = "/new/path";
 
-    printf("Original path2: %s\n", path2);
-    remove_last_element(path2);
-    printf("Modified path2: %s\n", path2);
+    // Array para almacenar las rutas actualizadas
+    char rutas_actualizadas[MAX_RUTAS][MAX_LONGITUD];
 
-    printf("Original path3: %s\n", path3);
-    remove_last_element(path3);
-    printf("Modified path3: %s\n", path3);
+    // Reemplazar las rutas
+    reemplazar_rutas(rutas, num_rutas, directorio_a_reemplazar, nueva_ruta, rutas_actualizadas);
+
+    // Mostrar las rutas actualizadas
+    printf("Rutas actualizadas:\n");
+    for (int i = 0; i < num_rutas; i++) {
+        printf("%s\n", rutas_actualizadas[i]);
+    }
 
     return 0;
 }

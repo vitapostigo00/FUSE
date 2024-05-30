@@ -104,7 +104,7 @@ int initFileSystem() {
             }
 
             newElement->data->size = dataSize;
-            newElement->data->data = data;
+            newElement->data->binario = data;
         }
 
         if (head == NULL) {
@@ -133,7 +133,7 @@ void printFileSystem(elementoTabla *table) {
         printf("Path: %s\n", current->path);
         if (current->data != NULL) {
             printf("Size: %lu\n", current->data->size);
-            printf("Data: %.*s\n", (int)current->data->size, current->data->data);
+            printf("Data: %.*s\n", (int)current->data->size, current->data->binario);
         }
         printf("\n");
         current = current->next;

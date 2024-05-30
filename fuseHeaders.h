@@ -27,6 +27,9 @@ char* currentPath;
 
 int initEmptyFilesystem();
 int initFromBin(char*);
+void cleanFileSystem();
+void exitFileSystem();
+void totalsize();
 elementoTabla* pathExists(char*);
 int createRawEntry(char*);
 char* checksPrevios(char*);
@@ -34,12 +37,16 @@ int createDir(char*);
 int subdir_inmediato(const char*,const char*);
 char* ultimoComponente(char*);
 char* ls();
-void totalsize();
 int guardarDatos(char*, char* , int);
+void pwd();
+void remove_last_element();
+void remove_last_elementArg(char*);
+void changeDirectory(char*);
 void copiarDesdeArchivo(const char*, char*);
 int devolverArchivo(char*,char*);
-void changeDirectory(char* );
-void remove_last_element();
+void cambiarHijos(const char*, const char*);
+char* absoluteFromRelative(const char*);
+void renombrar(const char*,const char*);
 
 #endif // FUSEHEADERS_H
 

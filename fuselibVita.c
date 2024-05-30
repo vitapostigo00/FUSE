@@ -134,8 +134,6 @@ void exitFileSystem(){
     cleanFileSystem();
 }
 
-
-
 void totalsize(){
     int contador = 0;
     elementoTabla* copia = (elementoTabla*) globalTable;
@@ -149,12 +147,14 @@ void totalsize(){
 
 elementoTabla* pathExists(char* path){
     elementoTabla* copia = (elementoTabla*) globalTable;
+    //printf("Path a matchear:%s\n",path);
     while(copia != NULL && strcmp(copia -> path, path) != 0){
+        //printf("ElementoPath:%s\n",copia -> path);
         copia = copia -> next;
     }
     return copia; //Devuelve NULL si no existe
 }
-////////////////////////////////////////////////////////////
+
 int createRawEntry(char* newEntry){
 
     // Crear la ruta completa del nuevo directorio
@@ -164,7 +164,7 @@ int createRawEntry(char* newEntry){
         return 1;
     }
 
-    strcpy(newString,"/");
+    strcpy(newString,"/"); 
     strcat(newString, newEntry);
     
 
@@ -200,7 +200,6 @@ int createRawEntry(char* newEntry){
 
     return 0;
 }
-////////////////////////////////////////////////////////////
 
 char* checksPrevios(char* newDir){
     if(strchr(newDir, '/')){
@@ -208,6 +207,9 @@ char* checksPrevios(char* newDir){
     }
     if(strchr(newDir, '?')){
         return "The new directory can't contain the: ? sign.";
+    }
+    if(strchr(newDir, '.')){
+        return "The new directory can't contain the: . sign.";
     }
     if(strlen(newDir) + strlen(currentPath) >= LONGESTPATHSIZE - 1){
         return "Path is too long for the given dir to create.";
@@ -421,20 +423,15 @@ void pwd(){
 }
 
 void remove_last_element() {
-    // Find the length of the string
     size_t len = strlen(currentPath);
 
-    // Check if the string ends with a '/'
     if (currentPath[len - 1] == '/') {
-        // Remove trailing '/'
         currentPath[len - 1] = '\0';
         len--;
     }
 
-    // Find the last '/' in the string
     for (size_t i = len - 1; i > 0; i--) {
         if (currentPath[i] == '/') {
-            // If the only slash is at the beginning, keep it
             if (i == 0) {
                 currentPath[1] = '\0';
             } else {
@@ -443,9 +440,28 @@ void remove_last_element() {
             return;
         }
     }
-
-    // If no '/' is found, make the filename "/"
+    
     strcpy(currentPath, "/");
+}
+
+void remove_last_elementArg(char* filename) {
+    size_t len = strlen(filename);
+
+    if (filename[len - 1] == '/') {
+        filename[len - 1] = '\0';
+        len--;
+    }
+
+    for (size_t i = len - 1; i > 0; i--) {
+        if (filename[i] == '/') {
+            if (i == 0) {
+                filename[1] = '\0';
+            } else {
+                filename[i + 1] = '\0';
+            }
+            return;
+        }
+    }
 }
 
 
@@ -536,6 +552,93 @@ int devolverArchivo(char* nuevoArchivo,char* archivoEnFUSe){
     return 0;
 }
 
+void cambiarHijos(const char* de, const char* a) {
+    size_t longitud_directorio = strlen(de);
+    elementoTabla* current = globalTable;
+
+    while (current != NULL) {
+        if (strncmp(current->path, de, longitud_directorio) == 0 &&
+            (current->path[longitud_directorio] == '/' || current->path[longitud_directorio] == '\0')) {
+            char* pos = strstr(current->path, de);
+            if (pos) {
+                size_t longitud_antes = pos - current->path;
+                size_t nueva_longitud = strlen(current->path) - strlen(de) + strlen(a) + 1;
+                char* nueva_ruta = (char*)malloc(nueva_longitud);
+                if (nueva_ruta) {
+                    strncpy(nueva_ruta, current->path, longitud_antes);
+                    strcpy(nueva_ruta + longitud_antes, a);
+                    strcpy(nueva_ruta + longitud_antes + strlen(a), pos + strlen(de));
+                    free(current->path);
+                    current->path = nueva_ruta;
+                }
+            }
+        }
+        current = current->next;
+    }
+}
+
+//Declara char* en memoria. Hay que liberarlos...
+char* absoluteFromRelative(const char* rel){
+    char* newFrom = malloc(sizeof(char)*(strlen(currentPath)+strlen(rel)+1));
+    //newFrom[0]='\0';
+    strcpy(newFrom, currentPath);
+    strcat(newFrom, rel);
+    return newFrom;
+}
+
+/*
+Se pueden dar 4 casos:
+    from: fichero    to: fichero        -> cambiar nombre                           Este ya esta listo
+    from: fichero    to: directorio     -> cambiar path
+    from: directorio to: fichero        -> no es posible <-                         Este ya esta listo
+    from: directorio to: directorio     -> cambiar directorio y todos sus hijos
+
+    Directorio es cuando y solo cuando:
+    path termina en /       o 
+    path es exactamente ..
+
+    tengo que acordarme de usar la función: cambiarHijos() a ver si funciona.
+
+*/
+
+void renombrar(const char* from,const char* to){
+    if(to[strlen(to)-1]!='/'&&strcmp(to,"..")!=0){//Si se da este caso, to es fichero
+
+        //Controlamos que no sea from: directorio to: fichero
+        if(from[strlen(from)-1]=='/'&&strcmp(from,"..")!=0){perror("No se puede from: directorio to: fichero.\n");return;}
+        
+        //Llegados aqui, suponemos que es from:fichero to:fichero
+        char* aux = absoluteFromRelative(from);
+        elementoTabla* copyPath = pathExists(aux);
+        if(copyPath==NULL){
+            perror("El fichero a cambiar de nombre no se ha podido encontrar.\n");
+            return;
+        }
+        char* copiaTo = malloc(sizeof(char)*(strlen(to)+1));
+        strcpy(copiaTo,to);
+        char* errores = checksPrevios(copiaTo);//Para no pasarle const char* como argumento
+        free(copiaTo);
+        if(errores!=NULL){  //Si contiene caracteres prohibidos, abortamos
+            perror(errores);
+            return;
+        }
+        remove_last_elementArg(aux);
+        free(copyPath -> path);
+        copyPath -> path = malloc(sizeof(char)*(strlen(aux)+strlen(to)+1));
+        if(copyPath -> path==NULL){
+            perror("No se ha podido reservar memoria./n"); free(aux);
+        }
+        strcpy(copyPath -> path,aux);
+        free(aux);
+        strcat(copyPath -> path,to);
+        printf("Fichero renombrado, nueva ruta:%s\n",copyPath -> path);
+        return;
+    }else{//To es un directorio, implementar los casos correspondientes...
+
+    }
+
+}
+
 
 int main(int argc, char **argv) {
 
@@ -543,17 +646,27 @@ int main(int argc, char **argv) {
 
     if(initialization == 0){
 
-        copiarDesdeArchivo("arcade.mp4","arcade");
+        //copiarDesdeArchivo("arcade.mp4","arcade");
         //devolverArchivo("arcadia.mp4","arcade");
 
-        
         printf("Filesystem propperly mounted\n");
 
-        copiarDesdeArchivo("portaTruco.mp3","portatruco");
+        //copiarDesdeArchivo("portaTruco.mp3","portatruco");
 
         //devolverArchivo("temazo.mp3","portatruco");
 
+        //ls();
+        //changeDirectory("dir1");
+        //ls();
+        //copiarDesdeArchivo("portaTruco.mp3","portatruco");
         ls();
+        renombrar("dir1/","temazo_insolito");
+        //changeDirectory("dir47");
+        ls();
+
+
+
+        /*
         printf("CurrPath: %s\n",currentPath);
         changeDirectory("dir2");
         printf("CurrPath: %s\n",currentPath);
@@ -569,6 +682,7 @@ int main(int argc, char **argv) {
         printf("CurrPath: %s\n",currentPath);
 
         ls();
+        */
         
     }else{
         printf("Error at init, aborpting.\n");
