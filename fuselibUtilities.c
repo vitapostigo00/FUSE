@@ -10,12 +10,10 @@
 
 elementoTabla* pathExists(char* path){
     elementoTabla* copia = (elementoTabla*) globalTable;
-    //printf("Path a matchear:%s\n",path);
     while(copia != NULL && strcmp(copia -> path, path) != 0){
-        //printf("ElementoPath:%s\n",copia -> path);
         copia = copia -> next;
     }
-    return copia; //Devuelve NULL si no existe
+    return copia;
 }
 
 char* checksPrevios(char* newDir){

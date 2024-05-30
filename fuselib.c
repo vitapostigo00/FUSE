@@ -7,8 +7,8 @@
 #include "fuselibUtilities.c"
 
 
-globalTable=NULL;
-currentPath=NULL;
+extern elementoTabla* globalTable;
+extern char* currentPath;
 
 int initEmptyFilesystem(){
     globalTable = (elementoTabla*) malloc(sizeof(elementoTabla));
@@ -513,25 +513,34 @@ void renombrar(const char* from,const char* to){
         return;
     }else{//To es un directorio, implementar los casos correspondientes...
         if(from[strlen(from)-1]=='/' && strcmp(from,"..")!=0){      //from es fichero
-            //Convertir to en absoluto, guardar from (si existe) con un nuevo path construido con absolute(to)+from
-            char* fromCopy;
-            strcpy(fromCopy,from);
-            fromCopy = absoluteFromRelative(fromCopy);
-            elementoTabla* copyPathFrom;// = pathExists();
-            if(copyPathFrom==NULL){
+            //Convertir to en absoluto, guardar from (si existe) con un nuevo path construido con absolute(to) + from
+            char* fromCopy = absoluteFromRelative(from);
+            elementoTabla* aMoverFrom = pathExists(fromCopy);
+            if(aMoverFrom==NULL){
                 free(fromCopy);
+                printf("No se ha podido encontrar el elemento a mover.");
                 return;
             }
-            char* toCopy = strdup(to);
-            elementoTabla* copyPathTo = pathExists(absoluteFromRelative(toCopy));
-            if(copyPathTo==NULL){   //Not found destination route.
+            //Aqui sabemos que to es directorio y el fichero de from existe. Vemos si to existe también.
+            char* toCopy = absoluteFromRelative(to);
+            elementoTabla* aMoverTo = pathExists(toCopy);
+            if(aMoverTo==NULL){
                 free(fromCopy);
                 free(toCopy);
+                printf("No se ha podido encontrar el directorio a donde se quiere mover el elemento.");
                 return;
             }
-
-        
-        
+            //Aqui ambos existen, tenemos que hacer un nuevo path de la forma: toCopy+from
+            free(aMoverFrom -> path);
+            aMoverFrom -> path = malloc(sizeof(char)*(strlen(toCopy)+strlen(from)+1));
+            aMoverFrom -> path[0] = '\0';
+            strcpy(aMoverFrom -> path,toCopy);
+            strcat(aMoverFrom -> path,from);
+            //Listo, liberamos punteros y retornamos.
+            free(fromCopy);
+            free(toCopy);
+            printf("Fichero turbomovido");
+            return;
         }
         else{                                                       //from es directorio
 
@@ -565,9 +574,10 @@ int main(int argc, char **argv) {
         changeDirectory("dir1");
         copiarDesdeArchivo("arcade.mp4","albacete");
         ls();
-        renombrar("albacete","cadiz");
+        renombrar("albacete","..");
+        
+        changeDirectory("..");
         ls();
-        devolverArchivo("cadiz.mp3","cadiz");
 
         //changeDirectory("dir47");
         ls();
