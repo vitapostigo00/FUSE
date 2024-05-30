@@ -1,37 +1,54 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
-
-int is_immediate_subdir(const char* parent, const char* child) {
-    size_t parent_len = strlen(parent);
-    size_t child_len = strlen(child);
-
-    // Eliminar el slash final de 'parent' si existe
-    if (parent[parent_len - 1] == '/') {
-        parent_len--;
+void remove_last_element(char *filename) {
+    if (filename == NULL || strlen(filename) == 0) {
+        return;
     }
 
-    // Asegurarse de que 'child' comienza con 'parent' y que el siguiente caracter es '/'
-    if (strncmp(parent, child, parent_len) == 0 && child[parent_len] == '/') {
-        // Verificar que solo hay un nivel de directorio de diferencia
-        char* rest = child + parent_len + 1;
-        // Verificar que no hay más slashes después del primer nivel
-        return (strchr(rest, '/') == NULL || strchr(rest, '/') == rest + strlen(rest) - 1);
+    // Find the length of the string
+    size_t len = strlen(filename);
+
+    // Check if the string ends with a '/'
+    if (filename[len - 1] == '/') {
+        // Remove trailing '/'
+        filename[len - 1] = '\0';
+        len--;
     }
 
-    return 0;
+    // Find the last '/' in the string
+    for (size_t i = len - 1; i > 0; i--) {
+        if (filename[i] == '/') {
+            // If the only slash is at the beginning, keep it
+            if (i == 0) {
+                filename[1] = '\0';
+            } else {
+                filename[i + 1] = '\0';
+            }
+            return;
+        }
+    }
+
+    // If no '/' is found, make the filename "/"
+    strcpy(filename, "/");
 }
 
 int main() {
-    char* parent_path = "/";
-    char* child_path = "/Dir33/";
+    char path1[] = "/home/user/docs/folder/";
+    char path2[] = "/dir2/";
+    char path3[] = "/";
 
-    if (is_immediate_subdir(parent_path, child_path)) {
-        printf("'%s' es un subdirectorio inmediato de '%s'\n", child_path, parent_path);
-    } else {
-        printf("'%s' NO es un subdirectorio inmediato de '%s'\n", child_path, parent_path);
-    }
+    printf("Original path1: %s\n", path1);
+    remove_last_element(path1);
+    printf("Modified path1: %s\n", path1);
+
+    printf("Original path2: %s\n", path2);
+    remove_last_element(path2);
+    printf("Modified path2: %s\n", path2);
+
+    printf("Original path3: %s\n", path3);
+    remove_last_element(path3);
+    printf("Modified path3: %s\n", path3);
 
     return 0;
 }

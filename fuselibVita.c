@@ -114,6 +114,26 @@ int initFromBin(char* myFile) {
     return 0;  // Éxito
 }
 
+void cleanFileSystem(){
+    elementoTabla* next;
+    while(globalTable!=NULL){
+        next = globalTable -> next;
+        free(globalTable -> path);
+        if(globalTable -> data != NULL){
+            free(globalTable -> data ->binario);
+            free(globalTable -> data);
+        }
+        free(globalTable);
+        globalTable = next;
+    }
+    printf("FileSystem has been cleaned. Closing.");
+}
+
+void exitFileSystem(){
+    //Primero los datos al bin
+    cleanFileSystem();
+}
+
 
 
 void totalsize(){
@@ -307,7 +327,7 @@ char* ls(){
     elementoTabla* copy = globalTable->next; // No necesitas hacer un casting innecesario aquí
 
     while (copy != NULL) {
-        if (subdir_inmediato(currentPath, copy->path)) {
+        if (strcmp(currentPath, copy->path)!=0 && subdir_inmediato(currentPath, copy->path)) {
             strcat(retorno, ultimoComponente(copy->path));
             strcat(retorno, "   ");
         }
@@ -337,10 +357,6 @@ int guardarDatos(char* filename, char* data, int size) {
 
     strcpy(newString, currentPath);
     strcat(newString, filename);
-
-
-    printf("NewString: %s\n",newString);
-    fflush(stdout);
 
     // Verificar si el directorio ya existe
     if (pathExists(newString) != NULL){
@@ -398,6 +414,72 @@ int guardarDatos(char* filename, char* data, int size) {
     memcpy(toAppend -> data -> binario, data, size);
 
     return 0;
+}
+
+void pwd(){
+    printf("%s\n",currentPath);
+}
+
+void remove_last_element() {
+    // Find the length of the string
+    size_t len = strlen(currentPath);
+
+    // Check if the string ends with a '/'
+    if (currentPath[len - 1] == '/') {
+        // Remove trailing '/'
+        currentPath[len - 1] = '\0';
+        len--;
+    }
+
+    // Find the last '/' in the string
+    for (size_t i = len - 1; i > 0; i--) {
+        if (currentPath[i] == '/') {
+            // If the only slash is at the beginning, keep it
+            if (i == 0) {
+                currentPath[1] = '\0';
+            } else {
+                currentPath[i + 1] = '\0';
+            }
+            return;
+        }
+    }
+
+    // If no '/' is found, make the filename "/"
+    strcpy(currentPath, "/");
+}
+
+
+void changeDirectory(char* newDir){
+    if(strcmp(newDir,"..")==0){
+        if(strcmp(currentPath,"/")==0){
+            printf("Ya está en el directorio superior, no se puede subir.\n");
+        }else{
+            remove_last_element();
+            printf("Directorio cambiado.\n");
+        }
+        return;
+    }
+    // Crear la ruta completa del nuevo directorio
+    char* newString = malloc(sizeof(char)*(strlen(currentPath)+strlen(newDir)+2));
+    newString[0]='\0';
+    if (newString == NULL) {
+        perror("Error al asignar memoria para newString");
+        return;
+    }
+
+    strcpy(newString, currentPath);
+    strcat(newString, newDir);
+    strcat(newString, "/");
+
+    elementoTabla* savePath = pathExists(newString);
+    free(newString);
+    if (savePath != NULL){
+        strcpy(currentPath,savePath->path);
+        printf("Directorio cambiado\n");
+    }else{
+        printf("El directorio no existe\n");
+    }
+
 }
 
 void copiarDesdeArchivo(const char* filename, char* newFile){
@@ -461,26 +543,38 @@ int main(int argc, char **argv) {
 
     if(initialization == 0){
 
-        copiarDesdeArchivo("portaTruco.mp3","portatruco");
         copiarDesdeArchivo("arcade.mp4","arcade");
+        //devolverArchivo("arcadia.mp4","arcade");
 
-
+        
         printf("Filesystem propperly mounted\n");
 
-        createDir("Dir48");
+        copiarDesdeArchivo("portaTruco.mp3","portatruco");
+
+        //devolverArchivo("temazo.mp3","portatruco");
+
+        ls();
+        printf("CurrPath: %s\n",currentPath);
+        changeDirectory("dir2");
+        printf("CurrPath: %s\n",currentPath);
         createDir("dir33");
+        changeDirectory("dir33");
+        pwd();
         createDir("dir59");
 
         ls();
 
-        devolverArchivo("arcadia.mp4","arcade");
-        devolverArchivo("temazo.mp3","portatruco");
+        changeDirectory("..");
 
+        printf("CurrPath: %s\n",currentPath);
+
+        ls();
         
-
     }else{
         printf("Error at init, aborpting.\n");
+        return 1;
     }
-
+    
+    cleanFileSystem();
     return initialization;
 }

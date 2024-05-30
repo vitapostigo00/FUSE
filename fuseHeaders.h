@@ -22,7 +22,7 @@ typedef struct tabla{
     struct tabla* next;
 }elementoTabla;
 
-elementoTabla *globalTable;
+elementoTabla* globalTable; //Si empieza a fallar cambiarlo por: elementoTabla *globalTable;
 char* currentPath;
 
 int initEmptyFilesystem();
@@ -38,6 +38,8 @@ void totalsize();
 int guardarDatos(char*, char* , int);
 void copiarDesdeArchivo(const char*, char*);
 int devolverArchivo(char*,char*);
+void changeDirectory(char* );
+void remove_last_element();
 
 #endif // FUSEHEADERS_H
 
