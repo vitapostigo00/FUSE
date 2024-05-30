@@ -27,12 +27,12 @@ void reemplazar_rutas(const char *rutas[], int num_rutas, const char *directorio
 int main() {
     // Listado de todas las rutas en el sistema de archivos
     const char *rutas[MAX_RUTAS] = {
-        "/aa/yy/zz",
-        "/xx/ya/zz/file1",
-        "/xx/yy/file2",
-        "/xx/yy",
-        "/xx/aa/bb",
-        "/xx/yy/zz/subdir/file3"
+        "/aa/yy/zz/",
+        "/xx/ya/zz/file1/",
+        "/xx/yy/file2/",
+        "/xx/yy/",
+        "/xx/aa/bb/",
+        "/xx/yy/zz/subdir/file3/"
     };
     int num_rutas = 6;  // Número de rutas en la lista
 

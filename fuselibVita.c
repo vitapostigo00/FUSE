@@ -623,6 +623,20 @@ void renombrar(const char* from,const char* to){
             return;
         }
         remove_last_elementArg(aux);
+        if(strcmp(absoluteFromRelative(from),aux)==0){
+            free(copyPath -> path);
+            copyPath -> path = malloc(sizeof(char)*(strlen("/")+strlen(to)+1));
+            if(copyPath -> path==NULL){
+                perror("No se ha podido reservar memoria./n");
+                free(aux);
+                return;
+            }
+            copyPath -> path[0] = '\0';
+            strcpy(copyPath -> path,"/");
+            strcat(copyPath -> path,to);
+            free(aux);
+            return;
+        }
         free(copyPath -> path);
         copyPath -> path = malloc(sizeof(char)*(strlen(aux)+strlen(to)+1));
         if(copyPath -> path==NULL){
@@ -653,14 +667,17 @@ int main(int argc, char **argv) {
 
         //copiarDesdeArchivo("portaTruco.mp3","portatruco");
 
-        //devolverArchivo("temazo.mp3","portatruco");
-
+        
         //ls();
-        //changeDirectory("dir1");
+        
         //ls();
-        //copiarDesdeArchivo("portaTruco.mp3","portatruco");
+        changeDirectory("dir1");
+        copiarDesdeArchivo("arcade.mp4","albacete");
         ls();
-        renombrar("dir1/","temazo_insolito");
+        renombrar("albacete","cadiz");
+        ls();
+        devolverArchivo("cadiz.mp3","cadiz");
+
         //changeDirectory("dir47");
         ls();
 
