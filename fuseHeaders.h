@@ -22,8 +22,8 @@ typedef struct tabla{
     struct tabla* next;
 }elementoTabla;
 
-elementoTabla* globalTable; //Si empieza a fallar cambiarlo por: elementoTabla *globalTable;
-char* currentPath;
+extern elementoTabla* globalTable; //Si empieza a fallar cambiarlo por: elementoTabla *globalTable;
+extern char* currentPath;
 
 int initEmptyFilesystem();
 int initFromBin(char*);
