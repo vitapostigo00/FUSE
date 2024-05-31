@@ -591,18 +591,31 @@ void renombrar(const char* from,const char* to){
 void rmfile(char* filename){
 
     elementoTabla* copia = (elementoTabla*) globalTable;
+    char* newFilename = absoluteFromRelative(filename);
 
-    while(copia -> next != NULL && strcmp(copia -> next -> path, filename)!= 0){
+    while(copia -> next != NULL && strcmp(copia -> next -> path, newFilename)!= 0){
+        printf("Descartado: %s\n",copia->next->path);
         copia = copia -> next;
     }
+
+
+
+    free(newFilename);
 
     if(copia -> next == NULL){
         printf("No se ha podido encontrar el fichero");
         return;
     }
 
-    printf("Node found: %s\n",copia -> next -> path);
+    elementoTabla* copiaDeLaCopia = copia -> next;
+    copia -> next = copiaDeLaCopia -> next;
 
+    free(copiaDeLaCopia -> data -> binario);
+    free(copiaDeLaCopia -> data);
+    free(copiaDeLaCopia -> path);
+    free(copiaDeLaCopia);
+
+    printf("El fichero ha sido liberado\n");
 
 }
 
@@ -613,6 +626,12 @@ int main(int argc, char **argv) {
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
+        createDir("dir33");
+        copiarDesdeArchivo("arcade.mp4","arcadetruco");
+        ls();
+        rmfile("arcadetruco");
+        ls();
+        
         /*
         ls();
         changeDirectory("dir1");
