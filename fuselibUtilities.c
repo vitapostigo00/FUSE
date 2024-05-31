@@ -128,7 +128,6 @@ int startsWith(const char *str, const char *prefix) {
 
 // Función para reemplazar el prefijo en una lista enlazada
 void cambiarHijos(const char *path, const char *newPrefix) {
-    
     elementoTabla* head = (elementoTabla*) globalTable;
 
     while (head != NULL) {

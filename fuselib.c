@@ -465,9 +465,9 @@ Se pueden dar 4 casos:
 
 */
 void renombrar(const char* from,const char* to){
-    if(to[strlen(to)-1]!='/'&&strcmp(to,"..")!=0){//Si se da este caso, to es fichero
+    if(to[strlen(to)-1] != '/' && strcmp(to,"..") != 0){//Si se da este caso, to es fichero
         //Controlamos que no sea from: directorio to: fichero
-        if(from[strlen(from)-1]=='/'&&strcmp(from,"..")!=0){perror("No se puede from: directorio to: fichero.\n");return;}
+        if(from[strlen(from)-1] == '/' && strcmp(from,"..") != 0){perror("No se puede from: directorio to: fichero.\n");return;}
         //Llegados aqui, suponemos que es from:fichero to:fichero
         char* aux = absoluteFromRelative(from);
         elementoTabla* copyPath = pathExists(aux);
@@ -510,7 +510,7 @@ void renombrar(const char* from,const char* to){
         return;
     }
     else{//To es un directorio, implementar los casos correspondientes...
-        if(from[strlen(from)-1]!='/' && strcmp(from,"..")!=0){      //from es fichero
+        if(from[strlen(from)-1] != '/' && strcmp(from,"..") != 0){      //from es fichero
             //Convertir to en absoluto, guardar from (si existe) con un nuevo path construido con absolute(to) + from
             char* fromCopy = absoluteFromRelative(from);
             elementoTabla* aMoverFrom = pathExists(fromCopy);
@@ -585,20 +585,15 @@ void renombrar(const char* from,const char* to){
         }
     }
     return;
-
 }
 
 void rmfile(char* filename){
-
     elementoTabla* copia = (elementoTabla*) globalTable;
     char* newFilename = absoluteFromRelative(filename);
 
     while(copia -> next != NULL && strcmp(copia -> next -> path, newFilename)!= 0){
-        printf("Descartado: %s\n",copia->next->path);
         copia = copia -> next;
     }
-
-
 
     free(newFilename);
 
@@ -619,6 +614,59 @@ void rmfile(char* filename){
 
 }
 
+//Dado un string buscar el directorio y borrarlo, borrando además todos sus hijos.
+void removedir(char* filename){
+
+    char* pathAbsoluto = absoluteFromRelative(filename);
+    strcat(pathAbsoluto,"/");
+    elementoTabla* copia = pathExists(pathAbsoluto);
+
+    if(copia == NULL){
+        printf("El directorio a buscar no se ha podido encontrar");
+        return;
+    }
+
+    elementoTabla* aBorrar = (elementoTabla*) globalTable;
+    
+    while( aBorrar -> next != NULL ){
+        printf("Elemento a evaluar: %s\n",aBorrar -> next -> path);
+        if(startsWith(aBorrar->next->path,pathAbsoluto)==1){
+            printf("Entro?\n");
+            printf("Char a mirar: %c\n",aBorrar->next->path[strlen(aBorrar->next->path)-1]);
+            if(aBorrar->next->path[strlen(aBorrar->next->path)-1]!='/'){
+                printf("File to delete: %s\n",aBorrar->next->path);
+                elementoTabla* copiaDeLaCopia = aBorrar -> next;
+                aBorrar -> next = copiaDeLaCopia -> next;
+
+                free(copiaDeLaCopia->data->binario);
+                free(copiaDeLaCopia->data);
+                free(copiaDeLaCopia->path);
+                free(copiaDeLaCopia);
+
+            }else{
+                elementoTabla* copiaDeLaCopia = aBorrar -> next;
+                aBorrar -> next = copiaDeLaCopia -> next;
+                free(copiaDeLaCopia->path);
+                free(copiaDeLaCopia);
+                printf("Directorio borrado!\n");
+            }
+            fflush(stdout);
+        }else{
+            printf("No lo hace...\n");
+        }
+        aBorrar = aBorrar -> next;
+        if(aBorrar -> next == NULL){
+            printf("LOOOL\n");
+        }
+
+    }
+
+    free(pathAbsoluto);
+
+    printf("Se ha borrado todo el contenido de la carpeta\n");
+
+}
+
 
 int main(int argc, char **argv) {
 
@@ -626,24 +674,21 @@ int main(int argc, char **argv) {
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
-        createDir("dir33");
-        copiarDesdeArchivo("arcade.mp4","arcadetruco");
         ls();
-        rmfile("arcadetruco");
-        ls();
+        changeDirectory("dir1");
         
-        /*
-        ls();
-        changeDirectory("dir1");
-        createDir("dir33");
+        copiarDesdeArchivo("arcade.mp4","juegazodromo");
+        copiarDesdeArchivo("arcade.mp4","pruebajuego");
+        copiarDesdeArchivo("arcade.mp4","juegotruco");
+        createDir("dir3");
         changeDirectory("..");
-        renombrar("dir1/","dir2/");
-        ls();
-        changeDirectory("dir2");
-        ls();
-        changeDirectory("dir1");
-        ls();
-        */
+
+        mostrarTodo();
+        removedir("dir1");
+        
+        printf("\n\n");
+        mostrarTodo();
+        
         
     }else{
         printf("Error at init, aborpting.\n");
