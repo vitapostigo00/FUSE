@@ -47,6 +47,7 @@ int devolverArchivo(char*,char*);
 void cambiarHijos(const char*, const char*);
 char* absoluteFromRelative(const char*);
 void renombrar(const char*,const char*);
+void rmfile(char*);
 
 #endif // FUSEHEADERS_H
 

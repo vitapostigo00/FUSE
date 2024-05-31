@@ -96,47 +96,54 @@ void remove_last_element() {
 }
 
 void remove_last_elementArg(char* filename) {
-    size_t len = strlen(filename);
-
-    if (filename[len - 1] == '/') {
-        filename[len - 1] = '\0';
-        len--;
-    }
-
-    for (size_t i = len - 1; i > 0; i--) {
-        if (filename[i] == '/') {
-            if (i == 0) {
-                filename[1] = '\0';
-            } else {
-                filename[i + 1] = '\0';
-            }
-            return;
+    unsigned short int len = strlen(filename);
+    int i;  int savei;
+    for (i=len-2; i>=0; i--){
+        if(filename[i]=='/'){
+            savei = i;
+            break;
         }
     }
+
+    char* nuevoString = malloc(sizeof(char)*(savei+1));
+
+    for(int i = 0; i <= savei; i++){
+        nuevoString[i] = filename[i];
+    }
+    nuevoString[savei+1]='\0';    
+
+    strcpy(filename,nuevoString);
+
 }
 
-void cambiarHijos(const char* de, const char* a) {
-    size_t longitud_directorio = strlen(de);
-    elementoTabla* current = globalTable;
-
-    while (current != NULL) {
-        if (strncmp(current->path, de, longitud_directorio) == 0 &&
-            (current->path[longitud_directorio] == '/' || current->path[longitud_directorio] == '\0')) {
-            char* pos = strstr(current->path, de);
-            if (pos) {
-                size_t longitud_antes = pos - current->path;
-                size_t nueva_longitud = strlen(current->path) - strlen(de) + strlen(a) + 1;
-                char* nueva_ruta = (char*)malloc(nueva_longitud);
-                if (nueva_ruta) {
-                    strncpy(nueva_ruta, current->path, longitud_antes);
-                    strcpy(nueva_ruta + longitud_antes, a);
-                    strcpy(nueva_ruta + longitud_antes + strlen(a), pos + strlen(de));
-                    free(current->path);
-                    current->path = nueva_ruta;
-                }
-            }
+// Función para verificar si un string empieza con un prefijo dado
+int startsWith(const char *str, const char *prefix) {
+    while (*prefix) {
+        if (*prefix++ != *str++) {
+            return 0;
         }
-        current = current->next;
+    }
+    return 1;
+}
+
+// Función para reemplazar el prefijo en una lista enlazada
+void cambiarHijos(const char *path, const char *newPrefix) {
+    
+    elementoTabla* head = (elementoTabla*) globalTable;
+
+    while (head != NULL) {
+        if (startsWith(head->path, path)) {
+            // Creamos un nuevo string con el prefijo reemplazado
+            size_t newLen = strlen(newPrefix) + strlen(head->path) - strlen(path) + 1;
+            char *newStr = (char *)malloc(newLen);
+            strcpy(newStr, newPrefix);
+            strcat(newStr, head->path + strlen(path));
+
+            // Liberamos el string viejo y asignamos el nuevo
+            free(head->path);
+            head->path = newStr;
+        }
+        head = head->next;
     }
 }
 
@@ -151,7 +158,8 @@ char* absoluteFromRelative(const char* rel){
     }
     else if(strcmp(rel,"..")==0){
         char* newFrom = strdup(currentPath);
-        remove_last_element(newFrom);
+        remove_last_elementArg(newFrom);
+
         if(strcmp(currentPath,newFrom)==0){ //Si el dir no cambia es que estamos saltando a root.
             free(newFrom);
             return strdup("/\0");
@@ -164,5 +172,13 @@ char* absoluteFromRelative(const char* rel){
         strcpy(newFrom, currentPath);
         strcat(newFrom, rel);
         return newFrom;
+    }
+}
+
+void mostrarTodo(){
+    elementoTabla* copia = (elementoTabla*) globalTable;
+    while(copia != NULL){
+        printf("Path: %s\n",copia->path);
+        copia = copia -> next;
     }
 }

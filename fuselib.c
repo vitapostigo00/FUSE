@@ -367,7 +367,7 @@ void pwd(){
 void changeDirectory(char* newDir){
     if(strcmp(newDir,"..")==0){
         if(strcmp(currentPath,"/")==0){
-            printf("Ya está en el directorio superior, no se puede subir.\n");
+            printf("Ya esta en el directorio superior, no se puede subir.\n");
         }else{
             remove_last_element();
             printf("Directorio cambiado.\n");
@@ -453,9 +453,9 @@ int devolverArchivo(char* nuevoArchivo,char* archivoEnFUSe){
 /*
 Se pueden dar 4 casos:
     from: fichero    to: fichero        -> cambiar nombre                           Este ya esta listo
-    from: fichero    to: directorio     -> cambiar path
+    from: fichero    to: directorio     -> cambiar path                             Este ya esta listo
     from: directorio to: fichero        -> no es posible <-                         Este ya esta listo
-    from: directorio to: directorio     -> cambiar directorio y todos sus hijos
+    from: directorio to: directorio     -> cambiar directorio y todos sus hijos     Este ya esta listo
 
     Directorio es cuando y solo cuando:
     path termina en /       o 
@@ -464,13 +464,10 @@ Se pueden dar 4 casos:
     tengo que acordarme de usar la función: cambiarHijos() a ver si funciona.
 
 */
-
 void renombrar(const char* from,const char* to){
     if(to[strlen(to)-1]!='/'&&strcmp(to,"..")!=0){//Si se da este caso, to es fichero
-
         //Controlamos que no sea from: directorio to: fichero
         if(from[strlen(from)-1]=='/'&&strcmp(from,"..")!=0){perror("No se puede from: directorio to: fichero.\n");return;}
-        
         //Llegados aqui, suponemos que es from:fichero to:fichero
         char* aux = absoluteFromRelative(from);
         elementoTabla* copyPath = pathExists(aux);
@@ -511,8 +508,9 @@ void renombrar(const char* from,const char* to){
         strcat(copyPath -> path,to);
         printf("Fichero renombrado, nueva ruta:%s\n",copyPath -> path);
         return;
-    }else{//To es un directorio, implementar los casos correspondientes...
-        if(from[strlen(from)-1]=='/' && strcmp(from,"..")!=0){      //from es fichero
+    }
+    else{//To es un directorio, implementar los casos correspondientes...
+        if(from[strlen(from)-1]!='/' && strcmp(from,"..")!=0){      //from es fichero
             //Convertir to en absoluto, guardar from (si existe) con un nuevo path construido con absolute(to) + from
             char* fromCopy = absoluteFromRelative(from);
             elementoTabla* aMoverFrom = pathExists(fromCopy);
@@ -521,15 +519,23 @@ void renombrar(const char* from,const char* to){
                 printf("No se ha podido encontrar el elemento a mover.");
                 return;
             }
+            
             //Aqui sabemos que to es directorio y el fichero de from existe. Vemos si to existe también.
             char* toCopy = absoluteFromRelative(to);
+
+            if(strcmp(toCopy,to)==0){
+                free(toCopy);
+                toCopy = strdup("/\0");
+            }
+
             elementoTabla* aMoverTo = pathExists(toCopy);
             if(aMoverTo==NULL){
                 free(fromCopy);
                 free(toCopy);
-                printf("No se ha podido encontrar el directorio a donde se quiere mover el elemento.");
+                printf("No se ha podido encontrar el directorio a donde se quiere mover el elemento.\n");
                 return;
             }
+
             //Aqui ambos existen, tenemos que hacer un nuevo path de la forma: toCopy+from
             free(aMoverFrom -> path);
             aMoverFrom -> path = malloc(sizeof(char)*(strlen(toCopy)+strlen(from)+1));
@@ -539,17 +545,64 @@ void renombrar(const char* from,const char* to){
             //Listo, liberamos punteros y retornamos.
             free(fromCopy);
             free(toCopy);
-            printf("Fichero turbomovido");
             return;
         }
-        else{                                                       //from es directorio
+        else{//from: directorio to: directorio -> cambiar directorio y todos sus hijos
+            char* fromCopy = absoluteFromRelative(from);
+            elementoTabla* aMoverFrom = pathExists(fromCopy);
+            if(aMoverFrom==NULL){
+                free(fromCopy);
+                printf("No se ha podido encontrar el elemento a mover.");
+                return;
+            }
 
+            char* toCopy = absoluteFromRelative(to);
+            if(strcmp(toCopy,to)==0){   //no se si este if hace falta.
+                free(toCopy);
+                toCopy = strdup("/\0");
+            }
 
+            elementoTabla* aMoverTo = pathExists(toCopy);
+            if(aMoverTo==NULL){
+                free(fromCopy);
+                free(toCopy);
+                printf("No se ha podido encontrar el directorio a donde se quiere mover el elemento.\n");
+                return;
+            }
 
+            char* copiaHijos = strdup(toCopy);
+            strcat(copiaHijos,from);
+            cambiarHijos(fromCopy,copiaHijos);
 
+            free(copiaHijos);
+            free(aMoverFrom -> path);
+
+            aMoverFrom -> path = malloc(sizeof(char)*(strlen(toCopy)+strlen(from)+1));
+
+            strcpy(aMoverFrom -> path, toCopy);
+            strcat(aMoverFrom -> path, from);
+            return;
         }
     }
     return;
+
+}
+
+void rmfile(char* filename){
+
+    elementoTabla* copia = (elementoTabla*) globalTable;
+
+    while(copia -> next != NULL && strcmp(copia -> next -> path, filename)!= 0){
+        copia = copia -> next;
+    }
+
+    if(copia -> next == NULL){
+        printf("No se ha podido encontrar el fichero");
+        return;
+    }
+
+    printf("Node found: %s\n",copia -> next -> path);
+
 
 }
 
@@ -559,46 +612,17 @@ int main(int argc, char **argv) {
     int initialization = initFromBin("filesystem.bin");
 
     if(initialization == 0){
-
-        //copiarDesdeArchivo("arcade.mp4","arcade");
-        //devolverArchivo("arcadia.mp4","arcade");
-
         printf("Filesystem propperly mounted\n");
-
-        //copiarDesdeArchivo("portaTruco.mp3","portatruco");
-
-        
-        //ls();
-        
-        //ls();
-        changeDirectory("dir1");
-        copiarDesdeArchivo("arcade.mp4","albacete");
-        ls();
-        renombrar("albacete","..");
-        
-        changeDirectory("..");
-        ls();
-
-        //changeDirectory("dir47");
-        ls();
-
-
-
         /*
-        printf("CurrPath: %s\n",currentPath);
-        changeDirectory("dir2");
-        printf("CurrPath: %s\n",currentPath);
-        createDir("dir33");
-        changeDirectory("dir33");
-        pwd();
-        createDir("dir59");
-
         ls();
-
+        changeDirectory("dir1");
+        createDir("dir33");
         changeDirectory("..");
-
-        printf("CurrPath: %s\n",currentPath);
-
+        renombrar("dir1/","dir2/");
+        ls();
+        changeDirectory("dir2");
+        ls();
+        changeDirectory("dir1");
         ls();
         */
         
