@@ -26,9 +26,12 @@ elementoTabla* globalTable = NULL;
 char* currentPath = NULL;
 
 int initEmptyFilesystem();
-int initFromBin(char*);
+int initFromBin(const char*);
+int attachData(const char*);
+int insertarEnDatos(char* ,char* ,unsigned long);
 void cleanFileSystem();
-void exitFileSystem();
+void fileSystemToBin(const char*);
+void exitFileSystem(const char*);
 void totalsize();
 elementoTabla* pathExists(char*);
 int createRawEntry(char*);

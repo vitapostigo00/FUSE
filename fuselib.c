@@ -34,7 +34,7 @@ int initEmptyFilesystem(){
 }
 
 
-int initFromBin(char* myFile) {
+int initFromBin(const char* myFile) {
     if(initEmptyFilesystem()==1){
         return 1;
     }
@@ -109,16 +109,132 @@ int initFromBin(char* myFile) {
             printf("Fallo en el formato de entrada: \n");
             return 1;
         }
-        
-
         free(data);
-        
     }
-
     // Cierra el archivo
     fclose(file);
-    return 0;  // Éxito
+    return attachData(myFile);  // Éxito
 }
+
+int attachData(const char* filename) {
+    FILE *file = fopen(filename, "r");
+
+    if (file == NULL) {
+        // Si no se pudo abrir el archivo, imprimir un error.
+        perror("Error al abrir el archivo");
+        return -1;
+    }
+
+    // Saltar la primera línea
+    char ch;
+    while ((ch = fgetc(file)) != EOF && ch != '\n');
+
+    // Leer la segunda línea
+    char *line = NULL;
+    size_t len = 0;
+    if (getline(&line, &len, file) == -1) {
+        perror("Error al leer la segunda línea");
+        fclose(file);
+        return -1;
+    }
+
+    // Procesar la segunda línea
+    char *ptr = line;
+    while (*ptr != '\0') {
+        if (*ptr == '|') {
+            ptr++; // Avanzar el puntero
+
+            // Leer el tamaño del path
+            int path_length = 0;
+            while (*ptr >= '0' && *ptr <= '9') {
+                path_length = path_length * 10 + (*ptr - '0');
+                ptr++;
+            }
+
+            if (*ptr != '/') {
+                fprintf(stderr, "Formato inválido: se esperaba '/' después del tamaño del path\n");
+                free(line);
+                fclose(file);
+                return -1;
+            }
+            ptr++; // Saltar el carácter '/'
+
+            // Leer el path
+            char *path = (char *)malloc(path_length + 2);
+            strncpy(path, ptr, path_length);
+            path[path_length] = '\0';
+            ptr += path_length;
+
+            // Leer el tamaño del binario
+            unsigned long bin_size = 0;
+            while (*ptr >= '0' && *ptr <= '9') {
+                bin_size = bin_size * 10 + (*ptr - '0');
+                ptr++;
+            }
+
+            if (*ptr != '|') {
+                fprintf(stderr, "Formato inválido: se esperaba '|' después del tamaño del binario\n");
+                free(path);
+                free(line);
+                fclose(file);
+                return -1;
+            }
+            ptr++; // Saltar el carácter '|'
+
+            // Leer el binario
+            char *binario = (char *)malloc(bin_size + 1);
+            strncpy(binario, ptr, bin_size);
+            binario[bin_size] = '\0';
+            ptr += bin_size;
+
+            // Mostrar los datos
+            printf("Path: %s\n", path);
+            printf("Binario: %s\n", binario);
+
+            if(insertarEnDatos(path,binario,bin_size)==1){
+                free(line);
+                fclose(file);
+                return 1;
+            }
+
+        } else {
+            ptr++;
+        }
+    }
+
+    // Liberar la memoria de la línea y cerrar el archivo
+    free(line);
+    fclose(file);
+
+    return 0;
+}
+
+int insertarEnDatos(char* path, char* binario, unsigned long size){
+
+    char* newPath = malloc(sizeof(char)*(strlen(path)+2));
+    newPath[0] = '/';newPath[1] = '\0';
+    strcat(newPath,path);
+    
+    free(path);
+
+    elementoTabla* copiaElemento = pathExists(newPath);
+
+    if(copiaElemento==NULL || copiaElemento -> data != NULL){
+        perror("No se han podido guardar los datos.\n");
+        free(newPath); free(binario);
+        return 1;
+    }
+
+    free(newPath);
+
+    copiaElemento -> data = malloc(sizeof(TFiles));
+    copiaElemento -> data -> binario = binario;
+    copiaElemento -> data -> size = size;
+
+    return 0;
+
+}
+
 
 void cleanFileSystem(){
     elementoTabla* next;
@@ -135,8 +251,55 @@ void cleanFileSystem(){
     printf("FileSystem has been cleaned. Closing.");
 }
 
-void exitFileSystem(){
-    //Primero los datos al bin
+void fileSystemToBin(const char* newBin) {
+    // Abre el archivo en modo escritura ("w"), lo cual borra el contenido si existe o crea uno nuevo si no existe.
+    FILE *file = fopen(newBin, "w");
+
+    if (file == NULL) {
+        // Si no se pudo abrir el archivo, imprimir un error.
+        perror("Error al abrir el archivo");
+        return;
+    }
+
+    // Primera parte: escribir paths y signo de interrogación final
+    elementoTabla* current = globalTable -> next;
+    while (current != NULL) {
+        // Calcula el tamaño del path
+        int path_length = strlen(current->path);
+
+        // Escribe el formato en el archivo: |tamaño/path|
+        fprintf(file, "|%d%s", (path_length-1), current->path);
+
+        // Avanza al siguiente nodo
+        current = current->next;
+    }
+
+    // Escribe el carácter de finalización y un salto de línea
+    fprintf(file, "?\n");
+
+    // Segunda parte: escribir datos binarios formateados
+    current = globalTable -> next;
+    while (current != NULL) {
+        if (current->data != NULL) {
+            // Calcula el tamaño del path y del binario
+            int path_length = strlen(current->path);
+            unsigned long bin_size = current->data->size;
+
+            // Escribe el formato en el archivo: |path_length/path/bin_size/binario|
+            fprintf(file, "|%d%s%lu|", (path_length-1), current->path, bin_size);
+            fwrite(current->data->binario, sizeof(char), bin_size, file);
+        }
+
+        // Avanza al siguiente nodo
+        current = current->next;
+    }
+
+    // Cierra el archivo
+    fclose(file);
+}
+
+void exitFileSystem(const char* newBin){
+    fileSystemToBin(newBin);
     cleanFileSystem();
 }
 
@@ -859,23 +1022,22 @@ void removedir(char* filename){
 
 
 int main(int argc, char **argv) {
-
-    int initialization = initFromBin("filesystem.bin");
+    const char* initBin = "newbin.bin";
+    int initialization = initFromBin(initBin);
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
         changeDirectory("dir1");
-        createDir("paco");
-        changeDirectory("..");
-        renombrarGPT("dir1/","dir3");
+        rmfile("notazas");
+        
         mostrarTodo();
-        
-        
     }else{
         printf("Error at init, aborpting.\n");
         return 1;
     }
-    
-    cleanFileSystem();
+
+    const char* persistBin = "newbin.bin";
+    exitFileSystem(persistBin);
     return initialization;
+    
 }
