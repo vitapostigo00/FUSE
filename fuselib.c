@@ -452,10 +452,10 @@ int devolverArchivo(char* nuevoArchivo,char* archivoEnFUSe){
 
 /*
 Se pueden dar 4 casos:
-    from: fichero    to: fichero        -> cambiar nombre                           Este ya esta listo
-    from: fichero    to: directorio     -> cambiar path                             Este ya esta listo
-    from: directorio to: fichero        -> no es posible <-                         Este ya esta listo
-    from: directorio to: directorio     -> cambiar directorio y todos sus hijos     Este ya esta listo
+    from: fichero    to: fichero        -> cambiar nombre                               Este ya esta listo
+    from: fichero    to: directorio     -> cambiar path                                 Este ya esta listo
+    from: directorio to: fichero        -> cambiar nombre del directorio y sus hijos    Por hacer
+    from: directorio to: directorio     -> cambiar directorio y todos sus hijos         Este ya esta listo
 
     Directorio es cuando y solo cuando:
     path termina en /       o 
@@ -587,6 +587,210 @@ void renombrar(const char* from,const char* to){
     return;
 }
 
+void renombrarGPT(const char* from, const char* to) {
+    if (to[strlen(to) - 1] != '/' && strcmp(to, "..") != 0) { // Si se da este caso, to es fichero
+        // Controlamos que no sea from: directorio to: fichero
+        if (from[strlen(from) - 1] == '/' && strcmp(from, "..") != 0) {
+            // Permitimos renombrar un directorio a un nombre de fichero, ajustando el nombre del directorio
+            printf("Renombrando directorio a nombre de fichero.\n");
+            char* aux = absoluteFromRelative(from);
+            elementoTabla* copyPath = pathExists(aux);
+            if (copyPath == NULL) {
+                perror("El directorio a cambiar de nombre no se ha podido encontrar.\n");
+                free(aux);
+                return;
+            }
+            char* copiaTo = malloc(sizeof(char) * (strlen(to) + 1)); // +1 para el '\0'
+            if (copiaTo == NULL) {
+                perror("No se ha podido reservar memoria.\n");
+                free(aux);
+                return;
+            }
+            strcpy(copiaTo, to);
+            char* errores = checksPrevios(copiaTo); // Para no pasarle const char* como argumento
+            if (errores != NULL) { // Si contiene caracteres prohibidos, abortamos
+                perror(errores);
+                free(aux);
+                free(copiaTo);
+                return;
+            }
+            free(copiaTo); // Liberamos copiaTo después de pasar checksPrevios
+            remove_last_elementArg(aux);
+            if (strcmp(absoluteFromRelative(from), aux) == 0) {
+                free(copyPath->path);
+                copyPath->path = malloc(sizeof(char) * (strlen("/") + strlen(to) + 2)); // +2 para el '/' y el '\0'
+                if (copyPath->path == NULL) {
+                    perror("No se ha podido reservar memoria.\n");
+                    free(aux);
+                    return;
+                }
+                strcpy(copyPath->path, "/");
+                strcat(copyPath->path, to);
+                strcat(copyPath->path, "/");
+                free(aux);
+                return;
+            }
+            free(copyPath->path);
+            copyPath->path = malloc(sizeof(char) * (strlen(aux) + strlen(to) + 2)); // +2 para el '/' y el '\0'
+            if (copyPath->path == NULL) {
+                perror("No se ha podido reservar memoria.\n");
+                free(aux);
+                return;
+            }
+            strcpy(copyPath->path, aux);
+            strcat(copyPath->path, to);
+            strcat(copyPath->path, "/");
+            free(aux);
+            printf("Directorio renombrado, nueva ruta: %s\n", copyPath->path);
+            return;
+        }
+        // Llegados aquí, suponemos que es from: fichero to: fichero
+        char* aux = absoluteFromRelative(from);
+        elementoTabla* copyPath = pathExists(aux);
+        if (copyPath == NULL) {
+            perror("El fichero a cambiar de nombre no se ha podido encontrar.\n");
+            free(aux);
+            return;
+        }
+        char* copiaTo = malloc(sizeof(char) * (strlen(to) + 1));
+        if (copiaTo == NULL) {
+            perror("No se ha podido reservar memoria.\n");
+            free(aux);
+            return;
+        }
+        strcpy(copiaTo, to);
+        char* errores = checksPrevios(copiaTo); // Para no pasarle const char* como argumento
+        free(copiaTo);
+        if (errores != NULL) { // Si contiene caracteres prohibidos, abortamos
+            perror(errores);
+            free(aux);
+            return;
+        }
+        remove_last_elementArg(aux);
+        if (strcmp(absoluteFromRelative(from), aux) == 0) {
+            free(copyPath->path);
+            copyPath->path = malloc(sizeof(char) * (strlen("/") + strlen(to) + 1));
+            if (copyPath->path == NULL) {
+                perror("No se ha podido reservar memoria.\n");
+                free(aux);
+                return;
+            }
+            strcpy(copyPath->path, "/");
+            strcat(copyPath->path, to);
+            free(aux);
+            return;
+        }
+        free(copyPath->path);
+        copyPath->path = malloc(sizeof(char) * (strlen(aux) + strlen(to) + 1));
+        if (copyPath->path == NULL) {
+            perror("No se ha podido reservar memoria.\n");
+            free(aux);
+            return;
+        }
+        strcpy(copyPath->path, aux);
+        strcat(copyPath->path, to);
+        free(aux);
+        printf("Fichero renombrado, nueva ruta: %s\n", copyPath->path);
+        return;
+    } else { // To es un directorio, implementar los casos correspondientes...
+        if (from[strlen(from) - 1] != '/' && strcmp(from, "..") != 0) { // from es fichero
+            // Convertir to en absoluto, guardar from (si existe) con un nuevo path construido con absolute(to) + from
+            char* fromCopy = absoluteFromRelative(from);
+            elementoTabla* aMoverFrom = pathExists(fromCopy);
+            if (aMoverFrom == NULL) {
+                free(fromCopy);
+                printf("No se ha podido encontrar el elemento a mover.\n");
+                return;
+            }
+            // Aquí sabemos que to es directorio y el fichero de from existe. Vemos si to existe también.
+            char* toCopy = absoluteFromRelative(to);
+            if (strcmp(toCopy, to) == 0) {
+                free(toCopy);
+                toCopy = strdup("/\0");
+                if (toCopy == NULL) {
+                    perror("No se ha podido reservar memoria.\n");
+                    free(fromCopy);
+                    return;
+                }
+            }
+            elementoTabla* aMoverTo = pathExists(toCopy);
+            if (aMoverTo == NULL) {
+                free(fromCopy);
+                free(toCopy);
+                printf("No se ha podido encontrar el directorio a donde se quiere mover el elemento.\n");
+                return;
+            }
+            // Aquí ambos existen, tenemos que hacer un nuevo path de la forma: toCopy+from
+            free(aMoverFrom->path);
+            aMoverFrom->path = malloc(sizeof(char) * (strlen(toCopy) + strlen(from) + 1));
+            if (aMoverFrom->path == NULL) {
+                perror("No se ha podido reservar memoria.\n");
+                free(fromCopy);
+                free(toCopy);
+                return;
+            }
+            strcpy(aMoverFrom->path, toCopy);
+            strcat(aMoverFrom->path, from);
+            // Listo, liberamos punteros y retornamos.
+            free(fromCopy);
+            free(toCopy);
+            return;
+        } else { // from: directorio to: directorio -> cambiar directorio y todos sus hijos
+            char* fromCopy = absoluteFromRelative(from);
+            elementoTabla* aMoverFrom = pathExists(fromCopy);
+            if (aMoverFrom == NULL) {
+                free(fromCopy);
+                printf("No se ha podido encontrar el elemento a mover.\n");
+                return;
+            }
+            char* toCopy = absoluteFromRelative(to);
+            if (strcmp(toCopy, to) == 0) { // no se si este if hace falta.
+                free(toCopy);
+                toCopy = strdup("/\0");
+                if (toCopy == NULL) {
+                    perror("No se ha podido reservar memoria.\n");
+                    free(fromCopy);
+                    return;
+                }
+            }
+            elementoTabla* aMoverTo = pathExists(toCopy);
+            if (aMoverTo == NULL) {
+                free(fromCopy);
+                free(toCopy);
+                printf("No se ha podido encontrar el directorio a donde se quiere mover el elemento.\n");
+                return;
+            }
+            char* copiaHijos = malloc(sizeof(char) * (strlen(toCopy) + strlen(from) + 1));
+            if (copiaHijos == NULL) {
+                perror("No se ha podido reservar memoria.\n");
+                free(fromCopy);
+                free(toCopy);
+                return;
+            }
+            strcpy(copiaHijos, toCopy);
+            strcat(copiaHijos, from);
+            cambiarHijos(fromCopy, copiaHijos);
+            free(copiaHijos);
+            free(aMoverFrom->path);
+            aMoverFrom->path = malloc(sizeof(char) * (strlen(toCopy) + strlen(from) + 1));
+            if (aMoverFrom->path == NULL) {
+                perror("No se ha podido reservar memoria.\n");
+                free(fromCopy);
+                free(toCopy);
+                return;
+            }
+            strcpy(aMoverFrom->path, toCopy);
+            strcat(aMoverFrom->path, from);
+            free(fromCopy);
+            free(toCopy);
+            return;
+        }
+    }
+}
+
+
+
+
 void rmfile(char* filename){
     elementoTabla* copia = (elementoTabla*) globalTable;
     char* newFilename = absoluteFromRelative(filename);
@@ -602,7 +806,7 @@ void rmfile(char* filename){
         return;
     }
 
-    elementoTabla* copiaDeLaCopia = copia -> next;
+    elementoTabla* copiaDeLaCopia = (elementoTabla*) copia -> next;
     copia -> next = copiaDeLaCopia -> next;
 
     free(copiaDeLaCopia -> data -> binario);
@@ -629,36 +833,25 @@ void removedir(char* filename){
     elementoTabla* aBorrar = (elementoTabla*) globalTable;
     
     while( aBorrar -> next != NULL ){
-        printf("Elemento a evaluar: %s\n",aBorrar -> next -> path);
         if(startsWith(aBorrar->next->path,pathAbsoluto)==1){
-            printf("Entro?\n");
-            printf("Char a mirar: %c\n",aBorrar->next->path[strlen(aBorrar->next->path)-1]);
             if(aBorrar->next->path[strlen(aBorrar->next->path)-1]!='/'){
-                printf("File to delete: %s\n",aBorrar->next->path);
-                elementoTabla* copiaDeLaCopia = aBorrar -> next;
+                elementoTabla* copiaDeLaCopia = (elementoTabla*) aBorrar -> next;
                 aBorrar -> next = copiaDeLaCopia -> next;
 
                 free(copiaDeLaCopia->data->binario);
                 free(copiaDeLaCopia->data);
                 free(copiaDeLaCopia->path);
                 free(copiaDeLaCopia);
-
             }else{
-                elementoTabla* copiaDeLaCopia = aBorrar -> next;
+                elementoTabla* copiaDeLaCopia = (elementoTabla*) aBorrar -> next;
                 aBorrar -> next = copiaDeLaCopia -> next;
                 free(copiaDeLaCopia->path);
                 free(copiaDeLaCopia);
-                printf("Directorio borrado!\n");
             }
-            fflush(stdout);
-        }else{
-            printf("No lo hace...\n");
         }
-        aBorrar = aBorrar -> next;
-        if(aBorrar -> next == NULL){
-            printf("LOOOL\n");
+        else{
+            aBorrar = aBorrar -> next;
         }
-
     }
 
     free(pathAbsoluto);
@@ -674,19 +867,10 @@ int main(int argc, char **argv) {
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
-        ls();
         changeDirectory("dir1");
-        
-        copiarDesdeArchivo("arcade.mp4","juegazodromo");
-        copiarDesdeArchivo("arcade.mp4","pruebajuego");
-        copiarDesdeArchivo("arcade.mp4","juegotruco");
-        createDir("dir3");
+        createDir("paco");
         changeDirectory("..");
-
-        mostrarTodo();
-        removedir("dir1");
-        
-        printf("\n\n");
+        renombrarGPT("dir1/","dir3");
         mostrarTodo();
         
         
