@@ -788,9 +788,6 @@ void renombrarGPT(const char* from, const char* to) {
     }
 }
 
-
-
-
 void rmfile(char* filename){
     elementoTabla* copia = (elementoTabla*) globalTable;
     char* newFilename = absoluteFromRelative(filename);
