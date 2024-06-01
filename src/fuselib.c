@@ -12,17 +12,6 @@ extern elementoTabla* globalTable;
 extern char* currentPath;
 extern char* FUSEINITFILES;
 
-void totalsize(){
-    int contador = 0;
-    elementoTabla* copia = (elementoTabla*) globalTable;
-    while(copia != NULL ){
-        printf("Nombre: %s\n",copia->path);
-        copia = copia -> next;
-        contador++;
-    }
-    printf("Totasize: %i\n",contador);
-}
-
 int createDir(char* newDir){
     // Verificar errores previos
     char* msgError = checksPrevios(newDir);   
@@ -103,85 +92,7 @@ char* ls(){
     }
 
     printf("%s\n", retorno);
-
     return retorno;
-}
-
-int guardarDatos(char* filename, char* data, int size) {
-    // Verificar errores previos
-    char* msgError = checksPrevios(filename);   
-    if(msgError != NULL){
-        printf("%s\n", msgError);
-        return 1;
-    }
-
-    // Crear la ruta completa del nuevo directorio
-    char* newString = malloc(sizeof(char)*(strlen(currentPath)+strlen(filename)+1));
-    newString[0]='\0';
-    if (newString == NULL) {
-        perror("Error al asignar memoria para newString");
-        return 1;
-    }
-
-    strcpy(newString, currentPath);
-    strcat(newString, filename);
-
-    // Verificar si el directorio ya existe
-    if (pathExists(newString) != NULL){
-        printf("El elemento a crear ya existe\n");
-        free(newString);
-        return 1;
-    }
-
-    // Encontrar el último elemento en la tabla global
-    elementoTabla* toAppend = globalTable;
-    while (toAppend->next != NULL){
-        toAppend = toAppend->next;
-    }
-
-    // Crear un nuevo elemento para el nuevo directorio
-    toAppend -> next = malloc(sizeof(elementoTabla));
-    if (toAppend->next == NULL) {
-        perror("Error al asignar memoria para nuevo elemento de la tabla");
-        free(newString);
-        return 1;
-    }
-    toAppend = toAppend->next;
-
-    // Asignar la ruta al nuevo elemento
-    toAppend -> path = malloc(sizeof(char)*(strlen(newString)+1));
-    if (toAppend->path == NULL) {
-        perror("Error al asignar memoria para la ruta del nuevo elemento");
-        free(toAppend->next);
-        free(newString);
-        return 1;
-    }
-    strcpy(toAppend->path, newString);
-    free(newString);
-
-    toAppend->next = NULL;
-
-    toAppend -> data = (TFiles*) malloc(sizeof(TFiles));
-
-    if (toAppend -> data == NULL) {
-        printf("Error en la asignación de memoria.\n");
-        //mirar qué liberar
-        return 1;
-    }
-
-    toAppend-> data -> size = size;
-
-    // Inicializar los otros campos del nuevo elemento
-    toAppend -> data -> binario = (char *) malloc(size);
-
-    if (toAppend -> data -> binario == NULL) {
-        fprintf(stderr, "Error en la asignación de memoria para datos.\n");
-        //mirar qué liberar
-        return 1;
-    }
-    memcpy(toAppend -> data -> binario, data, size);
-
-    return 0;
 }
 
 void pwd(){
@@ -583,7 +494,6 @@ void rmfile(char* filename){
     free(copiaDeLaCopia);
 
     printf("El fichero ha sido liberado\n");
-
 }
 
 //Dado un string buscar el directorio y borrarlo, borrando además todos sus hijos.
@@ -625,5 +535,4 @@ void removedir(char* filename){
     free(pathAbsoluto);
 
     printf("Se ha borrado todo el contenido de la carpeta\n");
-
 }

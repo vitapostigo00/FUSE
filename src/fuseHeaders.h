@@ -8,54 +8,68 @@
 #include <fcntl.h>
 #include <time.h>
 
-#define LONGESTPATHSIZE 100
-
+/////////////Estructuras////////////
 typedef struct Files{
-    unsigned long size;       // Tamaño de los datos binarios
-    char* binario;            // Puntero a los datos binarios
+    unsigned long size;
+    char* binario;
 } TFiles;
 
 typedef struct tabla{
     char* path;
-    //struct tm fechaCreacion;
     struct Files* data;
     struct tabla* next;
 }elementoTabla;
+/////////////Estructuras////////////
 
+/////////Variables globales/////////
+#define LONGESTPATHSIZE 1024
 elementoTabla* globalTable = NULL;
 char* currentPath = NULL;
 char* FUSEINITFILES = NULL;
+/////////Variables globales/////////
 
+////////////////////////////////////fuseinitexit.c////////////////////////////////////
 int initEmptyFilesystem();
+int loadAsDir(const char*);
+int loadAsFile(const char*);
 int initFromBin(const char*);
+void exportarABin(const char*,const char*,size_t);
 void cleanFileSystem();
+void saveAllDataFromFiles();
 void fileSystemToBin(const char*);
 void exitFileSystem(const char*);
-void totalsize();
-void saveAllDataFromFiles();
-elementoTabla* pathExists(char*);
-int createRawEntry(char*);
-char* checksPrevios(char*);
-int createDir(char*);
-int subdir_inmediato(const char*,const char*);
-char* ultimoComponente(char*);
-char* ls();
+////////////////////////////////////fuseinitexit.c////////////////////////////////////
+
+///////////////////////////////////////fuseIO.c///////////////////////////////////////
 int guardarDatos(char*, char* , int);
-void pwd();
-void remove_last_element();
-void remove_last_elementArg(char*);
-void changeDirectory(char*);
 void copiarDesdeArchivo(const char*, char*);
 int devolverArchivo(char*,char*);
+///////////////////////////////////////fuseIO.c///////////////////////////////////////
+
+//////////////////////////////////fuselibUtilities.c//////////////////////////////////
+elementoTabla* pathExists(char*);
+char* checksPrevios(char*);
+int subdir_inmediato(const char*,const char*);
+char* ultimoComponente(char*);
+void remove_last_element();
+void remove_last_elementArg(char*);
+int startsWith(const char*, const char*);
 void cambiarHijos(const char*, const char*);
 char* absoluteFromRelative(const char*);
+void mostrarTodo();     //<-Debug
+void totalsize();       //<-Debug
+unsigned long hash_djb2(const char*);
+char* hash_string(const char*);
+//////////////////////////////////fuselibUtilities.c//////////////////////////////////
+
+//////////////////////////////////////fuselib.c///////////////////////////////////////
+int createDir(char*);
+char* ls();                                             //Mirar especificación, declara memoria que hay que liberar
+void pwd();
+void changeDirectory(char*);
 void renombrar(const char*,const char*);
+void renombrarGPT(const char*, const char*);            //<- Hay que borrarla, la dejo temporal
 void rmfile(char*);
 void removedir(char*);
-
-#endif // FUSEHEADERS_H
-
-/*
-PATHLENGTH,PATH|PATHLENGTH,PATH|PATHLENGTH,PATH?
-PATHLENGTH,PATH,SIZE,DATA|PATHLENGTH,PATH,SIZE,DATA|/0/0/0/0/0/0/0/0
-*/
+//////////////////////////////////////fuselib.c///////////////////////////////////////
+#endif

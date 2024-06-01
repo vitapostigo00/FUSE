@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <time.h>
 #include <libgen.h>
+//En teoría sobran los siguientes 3 imports. Si falla algo se descomentan.
+//#include <errno.h>
+//#include <fcntl.h>
+//#include <time.h>
 
 #include "fuseHeaders.h"
+
+extern elementoTabla* globalTable;
+extern char* currentPath;
+extern char* FUSEINITFILES;
 
 elementoTabla* pathExists(char* path){
     elementoTabla* copia = (elementoTabla*) globalTable;
@@ -33,7 +38,6 @@ char* checksPrevios(char* newDir){
     return NULL;
 }
 
-
 int subdir_inmediato(const char* parent,const char* child) {
     size_t parent_len = strlen(parent);
     size_t child_len = strlen(child);
@@ -49,7 +53,6 @@ int subdir_inmediato(const char* parent,const char* child) {
         // Verificar que no hay más slashes después del primer nivel
         return (strchr(rest, '/') == NULL || strchr(rest, '/') == rest + strlen(rest) - 1);
     }
-
     return 0;
 }
 
@@ -61,13 +64,12 @@ char* ultimoComponente(char* path) {
         return NULL;
     }
 
-    // Utilizar basename para obtener el último componente de la ruta
+    //Tomamos el ultimo componente
     char* last_component = basename(path_copy);
 
-    // Hacer otra copia para retornar, porque path_copy será liberada
+    // Hacer otra copia para retornar, porque path_copy se libera
     char* result = strdup(last_component);
-    free(path_copy);  // Liberar la memoria de la copia original
-
+    free(path_copy);
     return result;
 }
 
@@ -98,6 +100,7 @@ void remove_last_element() {
 void remove_last_elementArg(char* filename) {
     unsigned short int len = strlen(filename);
     int i;  int savei;
+
     for (i=len-2; i>=0; i--){
         if(filename[i]=='/'){
             savei = i;
@@ -106,14 +109,11 @@ void remove_last_elementArg(char* filename) {
     }
 
     char* nuevoString = malloc(sizeof(char)*(savei+1));
-
     for(int i = 0; i <= savei; i++){
         nuevoString[i] = filename[i];
     }
     nuevoString[savei+1]='\0';    
-
     strcpy(filename,nuevoString);
-
 }
 
 // Función para verificar si un string empieza con un prefijo dado
@@ -148,7 +148,6 @@ void cambiarHijos(const char *path, const char *newPrefix) {
 
 //Declara char* en memoria. Hay que liberarlos...
 char* absoluteFromRelative(const char* rel){
-
     if(strcmp(rel,"/")==0){
         return strdup("/\0");
     }
@@ -182,9 +181,20 @@ void mostrarTodo(){
     }
 }
 
+void totalsize(){
+    int contador = 0;
+    elementoTabla* copia = (elementoTabla*) globalTable;
+    while(copia != NULL ){
+        printf("Nombre: %s\n",copia->path);
+        copia = copia -> next;
+        contador++;
+    }
+    printf("Totasize: %i\n",contador);
+}
 
+//String para obtener el nombre de los binarios a guardar en /bin
 //Uso: char *hash_str = hash_string(input);
-unsigned long hash_djb2(const char *str) {
+unsigned long hash_djb2(const char* str) {
     unsigned long hash = 5381;
     int c;
 
@@ -207,7 +217,6 @@ char* hash_string(const char *str) {
         exit(EXIT_FAILURE);
     }
 
-    snprintf(output, 17, "%lx", hash); // Convertir a string hexadecimal
-
+    snprintf(output, 17, "%lx", hash);
     return output;
 }
