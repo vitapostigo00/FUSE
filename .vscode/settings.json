@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "fuseheaders.h": "c",
+        "fcntl.h": "c"
+    }
+}

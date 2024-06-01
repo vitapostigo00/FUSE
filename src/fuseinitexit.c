@@ -33,203 +33,152 @@ int initEmptyFilesystem(){
     return 0;
 }
 
+int loadAsDir(const char* token) {
+    elementoTabla* copia = globalTable;
 
-int initFromBin(const char* myFile) {
-    if(initEmptyFilesystem()==1){
+    // Buscar el último elemento de la lista
+    while (copia->next != NULL) {
+        copia = copia->next;
+    }
+
+    // Crear un nuevo nodo
+    copia->next = (elementoTabla*) malloc(sizeof(elementoTabla));
+    if (copia->next == NULL) {
+        printf("Couldn't allocate memory for the node...");
         return 1;
     }
 
-    FILE *file;
-    char firstChar;
-    char numberStr[256];  // Buffer para almacenar el número
-    int index;
-
-    // Intenta abrir el archivo en modo binario de lectura
-    file = fopen(myFile, "rb");
-    if (file == NULL) {
-        printf("Error al abrir el archivo.\n");
-        return -1;  // Error al abrir el archivo
-    }
-
-    // Lee y procesa bloques hasta encontrar un bloque que empieza con '?'
-    while (1) {
-        if (fread(&firstChar, sizeof(char), 1, file) != 1) {
-            printf("Error o fin del archivo alcanzado inesperadamente.\n");
-            fclose(file);
-            return -1;
-        }
-
-        if (firstChar == '?') {
-            printf("Encontrado el caracter de terminacion '?'.\n");
-            break;
-        } else if (firstChar != '|') {
-            printf("Formato de archivo inesperado, se esperaba '|', se encontro: %c\n", firstChar);
-            fclose(file);
-            return -1;
-        }
-
-        // Inicializa el buffer y el índice para cada nuevo bloque
-        memset(numberStr, 0, sizeof(numberStr));
-        index = 0;
-        
-        // Leer caracteres hasta encontrar '/'
-        while (fread(&firstChar, sizeof(char), 1, file) == 1 && firstChar != '/') {
-            if (index < sizeof(numberStr) - 1) {
-                numberStr[index++] = firstChar;
-            }
-        }
-        numberStr[index] = '\0';
-
-        if (firstChar != '/') {
-            printf("No se encontro el caracter '/' despues del numero.\n");
-            fclose(file);
-            return -1;
-        }
-
-        long numChars = atol(numberStr);
-
-        // Reservar memoria y leer la cantidad de caracteres especificada
-        char *data = malloc(numChars + 1);
-        if (data == NULL) {
-            printf("No se pudo reservar memoria.\n");
-            fclose(file);
-            return -1;
-        }
-        if (fread(data, sizeof(char), numChars, file) != numChars) {
-            printf("No se pudo leer la cantidad esperada de caracteres.\n");
-            free(data);
-            fclose(file);
-            return -1;
-        }
-
-        data[numChars] = '\0';
-        
-        int aborpt = createRawEntry(data);
-        if(aborpt==1){
-            printf("Fallo en el formato de entrada: \n");
-            return 1;
-        }
-        free(data);
-    }
-    // Cierra el archivo
-    fclose(file);
-    return attachData(myFile);  // Éxito
-}
-
-int attachData(const char* filename) {
-    FILE *file = fopen(filename, "rb");  // Usar "rb" para modo binario
-
-    if (file == NULL) {
-        // Si no se pudo abrir el archivo, imprimir un error.
-        perror("Error al abrir el archivo");
-        return -1;
-    }
-
-    // Saltar la primera línea
-    char ch;
-    while ((ch = fgetc(file)) != EOF && ch != '\n');
-
-    // Leer la segunda línea
-    char *line = NULL;
-    size_t len = 0;
-    if (getline(&line, &len, file) == -1) {
-        perror("Error al leer la segunda línea");
-        fclose(file);
-        return -1;
-    }
-
-    // Procesar la segunda línea
-    char *ptr = line;
-    while (*ptr != '\0') {
-        if (*ptr == '|') {
-            ptr++; // Avanzar el puntero
-
-            // Leer el tamaño del path
-            int path_length = 0;
-            while (*ptr >= '0' && *ptr <= '9') {
-                path_length = path_length * 10 + (*ptr - '0');
-                ptr++;
-            }
-
-            if (*ptr != '/') {
-                fprintf(stderr, "Formato inválido: se esperaba '/' después del tamaño del path\n");
-                free(line);
-                fclose(file);
-                return -1;
-            }
-            ptr++; // Saltar el carácter '/'
-
-            // Leer el path
-            char *path = (char *)malloc(path_length + 1);
-            strncpy(path, ptr, path_length);
-            path[path_length] = '\0';
-            ptr += path_length;
-
-            // Leer el tamaño del binario
-            unsigned long bin_size = 0;
-            while (*ptr >= '0' && *ptr <= '9') {
-                bin_size = bin_size * 10 + (*ptr - '0');
-                ptr++;
-            }
-            bin_size--;
-
-            // Leer el binario en base a la longitud dada anteriormente
-            char *binario = (char *)malloc(bin_size + 1);
-            if (fread(binario, 1, bin_size, file) != bin_size) {
-                printf("No se pudo leer la cantidad esperada de caracteres binarios.\n");
-                free(path);
-                free(binario);
-                free(line);
-                fclose(file);
-                return -1;
-            }
-
-            binario[bin_size] = '\0';
-
-            if (insertarEnDatos(path, binario, bin_size) == 1) {
-                free(path);
-                free(binario);
-                free(line);
-                fclose(file);
-                return 1;
-            }
-
-        } else {
-            ptr++;
-        }
-    }
-
-    // Liberar la memoria de la línea y cerrar el archivo
-    free(line);
-    fclose(file);
+    // Inicializar el nuevo nodo
+    copia->next->path = strdup(token);
+    copia->next->data = NULL;
+    copia->next->next = NULL;
 
     return 0;
 }
 
-int insertarEnDatos(char* path, char* binario, unsigned long size){
-
-    char* newPath = malloc(sizeof(char)*(strlen(path)+2));
-    newPath[0] = '/';newPath[1] = '\0';
-    strcat(newPath,path);
+// Función para guardar un archivo en la tabla (procesar el token)
+int loadAsFile(const char* token) {
     
-    free(path);
+    printf("Entrada: %s\n",token);
+    fflush(stdout);
 
-    elementoTabla* copiaElemento = pathExists(newPath);
+    char* hash_str = malloc(sizeof(char)*LONGESTPATHSIZE);
+    strcpy(hash_str,"../bin/");
+    char* aux = hash_string(token);
+    strcat(hash_str,aux);
+    strcat(hash_str,".bin");
 
-    if(copiaElemento==NULL || copiaElemento -> data != NULL){
-        perror("No se han podido guardar los datos.\n");
-        free(newPath); free(binario);
+    FILE *file = fopen(hash_str, "rb");
+    if (file == NULL) {
+        perror("No se pudo abrir el archivo");
         return 1;
     }
 
-    free(newPath);
+    // Mover el puntero del archivo al final
+    fseek(file, 0, SEEK_END);
 
-    copiaElemento -> data = malloc(sizeof(TFiles));
-    copiaElemento -> data -> binario = binario;
-    copiaElemento -> data -> size = size;
+    // Obtener la longitud del archivo
+    long file_size = ftell(file);
+    if (file_size == -1) {
+        perror("Error al obtener el tamaño del archivo");
+        fclose(file);
+        return 1;
+    }
 
+    // Volver al inicio del archivo
+    rewind(file);
+
+    // Reservar memoria para almacenar el contenido del archivo
+    char *buffer = (char *)malloc(file_size + 1);
+    if (buffer == NULL) {
+        perror("No se pudo asignar memoria");
+        fclose(file);
+        return 1;
+    }
+
+    // Leer el contenido del archivo en el buffer
+    size_t read_size = fread(buffer, 1, file_size, file);
+    if (read_size != file_size) {
+        perror("No se pudo leer el contenido completo del archivo");
+        free(buffer);
+        fclose(file);
+        return 1;
+    }
+
+    // Cerrar el archivo
+    fclose(file);
+
+    elementoTabla* copia = globalTable;
+    // Buscar el último elemento de la lista
+    while (copia->next != NULL) {
+        copia = copia->next;
+    }
+
+    // Crear un nuevo nodo
+    copia->next = (elementoTabla*) malloc(sizeof(elementoTabla));
+    if (copia->next == NULL) {
+        printf("Couldn't allocate memory for the node...");
+        return 1;
+    }
+
+    // Inicializar el nuevo nodo
+    copia->next->path = strdup(token);
+    copia->next->data = malloc(sizeof(TFiles));
+
+    copia->next->data->binario=buffer;
+    copia->next->data->size=file_size;
+
+    copia->next->next = NULL;
+    
     return 0;
+}
 
+// Función para inicializar desde un archivo binario
+int initFromBin(const char* filename) {
+    if(initEmptyFilesystem()!=0){
+        return 1;
+    }
+
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        perror("No se pudo abrir el archivo");
+        return 1;
+    }
+
+    // Determinar el tamaño del archivo
+    fseek(file, 0, SEEK_END);
+    long filesize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Leer el contenido del archivo en un buffer
+    char* buffer = (char*)malloc(filesize + 1);
+    if (!buffer) {
+        perror("Error al asignar memoria para el buffer");
+        fclose(file);
+        return 1;
+    }
+
+    fread(buffer, 1, filesize, file);
+    buffer[filesize] = '\0'; // Asegurarse de que el buffer sea una cadena válida
+    fclose(file);
+
+
+    // Extraer y procesar las cadenas del buffer
+    char* token = strtok(buffer, "|");
+    while (token) {
+        //printf("Token: %s\n",token);
+        if (*token != '|') {
+            if(token[strlen(token)-1] == '/'){
+                loadAsDir(token);
+            }else{
+                loadAsFile(token);
+            } 
+        }
+        token = strtok(NULL, "|");
+    }
+
+    free(buffer);
+    return 0;
 }
 
 void exportarABin(const char* nombreArchivo, const char* buffer, size_t tamanio) {
@@ -259,9 +208,41 @@ void cleanFileSystem(){
     printf("FileSystem has been cleaned. Closing.");
 }
 
+
+void saveAllDataFromFiles(){
+
+    elementoTabla* current = (elementoTabla*) globalTable -> next;
+
+    while (current != NULL) {
+        if(current -> data!=NULL){
+            
+            char* hash_str = malloc(sizeof(char)*LONGESTPATHSIZE);
+            strcpy(hash_str,"../bin/");
+            char* aux = hash_string(current -> path);
+            strcat(hash_str,aux);
+            strcat(hash_str,".bin");
+
+            FILE* file = fopen(hash_str, "wb");
+            if (file == NULL) {
+                // Si no se pudo abrir el archivo, imprimir un error.
+                perror("Error al abrir el archivo");
+                return;
+            }
+            free(aux);
+            free(hash_str);
+
+            fwrite(current -> data -> binario, 1, current -> data -> size , file);
+
+            fclose(file);
+        }
+        current = current->next;
+    }
+
+}
+
 void fileSystemToBin(const char* newBin) {
     // Abre el archivo en modo escritura ("w"), lo cual borra el contenido si existe o crea uno nuevo si no existe.
-    FILE *file = fopen(newBin, "w");
+    FILE *file = fopen(newBin, "wb");
 
     if (file == NULL) {
         // Si no se pudo abrir el archivo, imprimir un error.
@@ -271,26 +252,13 @@ void fileSystemToBin(const char* newBin) {
 
     // Primera parte: escribir paths y signo de interrogación final
     elementoTabla* current = globalTable -> next;
-    while (current != NULL) {
-        // Calcula el tamaño del path
-        int path_length = strlen(current->path);
 
+    fwrite("|",sizeof(char) ,1, file);
+
+    while (current != NULL) {
         // Escribe el formato en el archivo: |tamaño/path|
-        fprintf(file, "|%d%s", (path_length-1), current->path);
-
-        // Avanza al siguiente nodo
-        current = current->next;
-    }
-
-    // Escribe el carácter de finalización y un salto de línea
-    fprintf(file, "?\n");
-
-    // Segunda parte: escribir datos binarios formateados
-    current = globalTable -> next;
-    while (current != NULL) {
-        if (current->data != NULL) {
-            exportarABin("MIBINARIO.BIN",current->data->binario,current->data->size);
-        }
+        fwrite(current->path, sizeof(char), strlen(current->path), file);
+        fwrite("|",sizeof(char) ,1, file);
 
         // Avanza al siguiente nodo
         current = current->next;
@@ -298,6 +266,8 @@ void fileSystemToBin(const char* newBin) {
 
     // Cierra el archivo
     fclose(file);
+
+    saveAllDataFromFiles();
 }
 
 void exitFileSystem(const char* newBin){

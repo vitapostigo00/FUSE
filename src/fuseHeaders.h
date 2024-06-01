@@ -28,12 +28,11 @@ char* FUSEINITFILES = NULL;
 
 int initEmptyFilesystem();
 int initFromBin(const char*);
-int attachData(const char*);
-int insertarEnDatos(char* ,char* ,unsigned long);
 void cleanFileSystem();
 void fileSystemToBin(const char*);
 void exitFileSystem(const char*);
 void totalsize();
+void saveAllDataFromFiles();
 elementoTabla* pathExists(char*);
 int createRawEntry(char*);
 char* checksPrevios(char*);

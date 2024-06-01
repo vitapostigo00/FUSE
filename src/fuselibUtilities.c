@@ -181,3 +181,33 @@ void mostrarTodo(){
         copia = copia -> next;
     }
 }
+
+
+//Uso: char *hash_str = hash_string(input);
+unsigned long hash_djb2(const char *str) {
+    unsigned long hash = 5381;
+    int c;
+
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+    }
+
+    return hash;
+}
+
+// Función que devuelve el hash como string
+char* hash_string(const char *str) {
+    unsigned long hash = hash_djb2(str);
+
+    // Crear un buffer para el string del hash
+    // Un unsigned long en hexadecimal puede tener hasta 16 caracteres más el nulo
+    char *output = malloc(17);
+    if (output == NULL) {
+        perror("Error al asignar memoria");
+        exit(EXIT_FAILURE);
+    }
+
+    snprintf(output, 17, "%lx", hash); // Convertir a string hexadecimal
+
+    return output;
+}
