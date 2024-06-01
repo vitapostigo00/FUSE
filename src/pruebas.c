@@ -11,6 +11,9 @@ int main(int argc, char **argv) {
 
     if(initialization == 0){
         printf("Filesystem propperly mounted\n");
+
+        //devolverArchivo("sanguijuela.mp4","videazo");
+        copiarDesdeArchivo("../data/arcade.mp4","videazo");
         
         mostrarTodo();
     }else{

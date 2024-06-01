@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "fuseheaders.h": "c",
-        "fcntl.h": "c"
+        "fcntl.h": "c",
+        "string.h": "c",
+        "stdio.h": "c"
     }
 }

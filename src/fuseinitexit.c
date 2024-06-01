@@ -108,6 +108,15 @@ int loadAsFile(const char* token) {
     // Cerrar el archivo
     fclose(file);
 
+    if (remove(hash_str) != 0) {
+        perror("No se pudo borrar el archivo");
+        return 1;
+    }else{
+        printf("se ha borrado lol");
+    }
+    free(hash_str);
+    free(aux);
+
     elementoTabla* copia = globalTable;
     // Buscar el último elemento de la lista
     while (copia->next != NULL) {
