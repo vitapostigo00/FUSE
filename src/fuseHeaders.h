@@ -16,6 +16,10 @@ typedef struct Files{
 
 typedef struct tabla{
     char* path;
+    time_t creation_time;     // Tiempo de creación del archivo
+    uid_t uid;                // ID de usuario del propietario
+    gid_t gid;                // ID de grupo del propietario
+    mode_t mode;              // Modo de protección del archivo
     struct Files* data;
     struct tabla* next;
 }elementoTabla;

@@ -71,6 +71,42 @@ int createDir(char* newDir){
     return 0;
 }
 
+char* ls(const char* path) {
+    elementoTabla *current = globalTable;
+    size_t buffer_size = 1024;
+    char *buffer = malloc(buffer_size);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    buffer[0] = '\0';
+
+    size_t path_len = strlen(path);
+    if (path[path_len - 1] != '/') {
+        path_len += 1; // Añadir 1 para la '/' adicional
+    }
+
+    while (current != NULL) {
+        if (strncmp(current->path, path, path_len) == 0) {
+            const char *relativePath = current->path + path_len;
+            if (strchr(relativePath, '/') == NULL) {
+                if (strlen(buffer) + strlen(relativePath) + 2 > buffer_size) {
+                    buffer_size *= 2;
+                    buffer = realloc(buffer, buffer_size);
+                    if (buffer == NULL) {
+                        return NULL;
+                    }
+                }
+                strcat(buffer, relativePath);
+                strcat(buffer, "\n");
+            }
+        }
+        current = current->next;
+    }
+
+    return buffer;
+}
+
+/*
 char* ls(){ 
     char* retorno = malloc(sizeof(char) * LONGESTPATHSIZE); // Reservar memoria para retorno
     
@@ -94,7 +130,7 @@ char* ls(){
     printf("%s\n", retorno);
     return retorno;
 }
-
+*/
 void pwd(){
     printf("%s\n",currentPath);
 }

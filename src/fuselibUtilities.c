@@ -14,11 +14,21 @@ extern char* currentPath;
 extern char* FUSEINITFILES;
 
 elementoTabla* pathExists(char* path){
+    /*
     elementoTabla* copia = (elementoTabla*) globalTable;
     while(copia != NULL && strcmp(copia -> path, path) != 0){
         copia = copia -> next;
     }
     return copia;
+    */
+    elementoTabla* current = globalTable;
+    while (current != NULL) {
+        if (strcmp(current->path, path) == 0) {
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL;
 }
 
 char* checksPrevios(char* newDir){
@@ -97,24 +107,21 @@ void remove_last_element() {
     strcpy(currentPath, "/");
 }
 
-void remove_last_elementArg(char* filename) {
-    unsigned short int len = strlen(filename);
-    int i;  int savei;
+// Implementación de otras funciones...
 
-    for (i=len-2; i>=0; i--){
-        if(filename[i]=='/'){
-            savei = i;
-            break;
+void remove_last_elementArg(char* path) {
+    char *lastSlash = strrchr(path, '/');
+    if (lastSlash != NULL) {
+        if (lastSlash == path) { // La raíz "/"
+            *(lastSlash + 1) = '\0';
+        } else {
+            *lastSlash = '\0';
         }
     }
-
-    char* nuevoString = malloc(sizeof(char)*(savei+1));
-    for(int i = 0; i <= savei; i++){
-        nuevoString[i] = filename[i];
-    }
-    nuevoString[savei+1]='\0';    
-    strcpy(filename,nuevoString);
 }
+
+// Implementación de otras funciones...
+
 
 // Función para verificar si un string empieza con un prefijo dado
 int startsWith(const char *str, const char *prefix) {
