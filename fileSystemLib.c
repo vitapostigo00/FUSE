@@ -6,8 +6,6 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-#include <pwd.h>
-#include <grp.h>
 #include <assert.h>
 
 #include "fuseHeaders.h"

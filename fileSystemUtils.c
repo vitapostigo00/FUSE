@@ -1,18 +1,5 @@
 #include "fuseHeaders.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <unistd.h>
-#include <pwd.h>
-#include <grp.h>
-
-#include "fuseHeaders.h"
-
 void print_time(time_t raw_time) {
     struct tm *timeinfo;
     char buffer[80];
