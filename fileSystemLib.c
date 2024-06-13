@@ -105,6 +105,8 @@ void changeDirectory(FileSystemInfo *fs, const char* newDir){
         printf("Path doesn't exist.\n");
         return;
     }
+    //Actualizamos el tiempo de último acceso
+    fs[directorioACambiar].last_access = time(0);
 
     currentDir = &fs[directorioACambiar];
 
