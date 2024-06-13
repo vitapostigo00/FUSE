@@ -128,12 +128,14 @@ int createDir(FileSystemInfo* fs, const char* filename){
     //Si ya existía, la funcion devuelve su path, si no, -1.
     if(exists(fs, fullPathString)!=-1){
         printf("Path already exists.\n");
+        free(fullPathString);
         return -1;
     }
 
     nextEmptyBlock = nextEmtpyBlock(fs);
     if(nextEmptyBlock==-1){
         printf("File system is full.\n");
+        free(fullPathString);
         return -1;
     }
 
@@ -298,7 +300,7 @@ int renameItem(FileSystemInfo* fs, const char* oldName, const char* newName) {
 
 int main() {
     const char *filename = "filesystem.bin";
-    FileSystemInfo *fs;
+    FileSystemInfo* fs;
     size_t filesize;
     int fd;
     struct stat st;
@@ -306,12 +308,6 @@ int main() {
     init(filename, &fs, &filesize, &fd, &st);
 
     removeDir(fs,"JuanDir");
-
-    //createDir(fs,"Albacete");
-
-    //renameItem(fs,"Prueba3/","SanJuan");//Rename requires / at the end to indicate its a path
-    
-    //printf("Hola");
 
     printFileSystemState(fs,"temp.txt");
     cleanup(fs, filesize, fd);
