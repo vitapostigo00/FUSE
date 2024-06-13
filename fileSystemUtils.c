@@ -137,7 +137,56 @@ int isPrefix(char* prefix, char* secondChain){
     return 0;
 }
 
-//Devuelve -1 si ya existía el path, si no devuelve la posicion del array donde se encuentra.
+// Función para reemplazar el prefijo de `cadena` con `nuevo_prefijo`
+void reemplazar_prefijo(char *cadena, char *prefijo, char *nuevo_prefijo) {
+    // Verificar si `prefijo` es realmente un prefijo de `cadena`
+    if (isPrefix(prefijo, cadena)==0) {
+        // Calcular el tamaño de la parte de la cadena después del prefijo
+        size_t tamano_prefijo = strlen(prefijo);
+        size_t tamano_nuevo_prefijo = strlen(nuevo_prefijo);
+        size_t tamano_restante = strlen(cadena) - tamano_prefijo;
+
+        // Mover la parte restante de la cadena hacia adelante
+        memmove(cadena + tamano_nuevo_prefijo, cadena + tamano_prefijo, tamano_restante + 1);
+
+        // Copiar el nuevo prefijo en la posición correcta
+        memcpy(cadena, nuevo_prefijo, tamano_nuevo_prefijo);
+    }
+}
+
+char* ultimoElemento(const char *cadena) {
+    // Clona la cadena para no modificar el original
+    char cadena_copia[LONGEST_FILENAME];
+    char* resultado = malloc(sizeof(char)*LONGEST_FILENAME);
+    strncpy(cadena_copia, cadena, sizeof(cadena_copia) - 1);
+    cadena_copia[sizeof(cadena_copia) - 1] = '\0';
+
+    // Encuentra el último '/'
+    char *ultimo_slash = strrchr(cadena_copia, '/');
+
+    // Encuentra el penúltimo '/' si existe
+    char *penultimo_slash = NULL;
+    if (ultimo_slash != NULL) {
+        *ultimo_slash = '\0'; // Temporalmente termina la cadena aquí
+        penultimo_slash = strrchr(cadena_copia, '/');
+    }
+
+    // Restaura el último '/' en la copia de la cadena
+    if (ultimo_slash != NULL) {
+        *ultimo_slash = '/';
+    }
+
+    // Copia el resultado
+    if (penultimo_slash != NULL) {
+        strncpy(resultado, penultimo_slash + 1, strlen(penultimo_slash + 1) + 1);
+    } else {
+        strncpy(resultado, cadena, strlen(cadena) + 1);
+    }
+
+    return resultado;
+}
+
+//Devuelve -1 si no existía el path, si no devuelve la posicion del array donde se encuentra.
 int exists(FileSystemInfo* fs, char* absoluteFilename){
     int current = 0;
     while(fs[current].siguiente != -1 && strcmp(fs[current].path, absoluteFilename)!=0){

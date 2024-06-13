@@ -101,6 +101,7 @@ void changeDirectory(FileSystemInfo *fs, const char* newDir){
     //Si ya existía, la funcion devuelve -1, si no, devuelve el numero donde se encuentra.
     if(directorioACambiar==-1){
         printf("Path doesn't exist.\n");
+        free(fullPathString);
         return;
     }
     //Actualizamos el tiempo de último acceso
@@ -233,7 +234,14 @@ void removeDir(FileSystemInfo* fs, const char* filename){
 //me falta el directorio -> lo que sea.
 //y falta testearla...
 int renameItem(FileSystemInfo* fs, const char* oldName, const char* newName) {
+    if(strcmp(oldName,".")==0||strcmp(oldName,"..")==0){
+        printf("No se puede referenciar a directorios superiores en rename...\n");
+        return 1;
+    }
+
     char* absOldName = buildFullPathGeneral(oldName);
+
+    //Checkeos previos...
     if(absOldName==NULL){
         printf("No se ha podido reservar memoria");
         return 1;
@@ -244,10 +252,115 @@ int renameItem(FileSystemInfo* fs, const char* oldName, const char* newName) {
         free(absOldName);
         return 1;
     }
+    //Checkeos previos...
+
 
     if(oldName[strlen(oldName)-1]=='/'){
         //Como oldname es un directorio, lleve newName / al final o no, será un renombrado
-        //tener en cuenta los hijos
+        //tener en cuenta los 
+        
+        //Se pueden dar 3 casos: 
+        if(strcmp(newName,".")==0){
+            //newName = "." ... no hacer nada
+            free(absOldName);
+            return 0;
+        }
+        else if(strcmp(newName,"..")==0){
+            //newName = ".." subir de directorio (trabajar con buildFullPathDir).
+            if(strcmp(currentDir -> path, "/")==0){
+                printf("No se puede subir un archivo de directorio si ya se encuenta en /...\n");
+                free(absOldName);
+                return 1;
+            }else{
+                //Me creo el nuevo path de destino...
+                char* copiaPath = buildFullPathDir(newName);
+                if(copiaPath==NULL){
+                    free(absOldName);
+                    printf("No se pudo reservar memoria...\n");
+                    return 1;
+                }
+                char* ultElem = ultimoElemento(oldName);
+                if(ultElem==NULL){
+                    free(copiaPath);
+                    free(absOldName);
+                    printf("No se pudo reservar memoria...\n");
+                    return 1;
+                }
+                //Ponemos el ultimoelemento al final del nuevo Path.
+                strcat(copiaPath,ultElem);
+
+                int i;
+                for(i = 1; i < FILESYSTEM_SIZE; i++){
+                    reemplazar_prefijo(fs[i].path, absOldName, copiaPath);
+                }
+
+                free(copiaPath);free(absOldName);free(ultElem);
+                return 0;
+            }
+
+        }else{
+            //Hay que probarla mucho, es el más conflictivo...
+
+            
+            //newName = otra Cosa mirar si acaba en /. Si acaba en / usar buildFullPathGeneral
+            //si no acaba en / usar buildFullPathDir.
+            char* newAbsName;
+            if((newName[strlen(newName)-1]=='/')){
+                newAbsName = buildFullPathGeneral(newName);
+            }else{
+                newAbsName = buildFullPathGeneral(newName);
+            }
+            if(absName==NULL){
+                free(absOldName);
+                return 1;
+            }
+            
+            //Una vez tenemos el path completo, comprobamos que exista y que no existe
+            //el path + ultimo elemento.
+            if(exists(fs,newAbsName)!=-1){
+                printf("No existe el path al que se quiere mover el directorio...\n");
+                free(newAbsName);
+                free(absOldName);
+                return 1;
+            }
+            if(strlen(newAbsName)+strlen(oldName)+1>LONGEST_FILENAME){
+                printf("El path es demasiado grande para lo permitido en el sistema...\n");
+                free(newAbsName);
+                free(absOldName);
+                return 1;
+            }
+            strcat(newAbsName,oldName);
+            if(exists(fs,newAbsName)!==1){
+                printf("Ya existe el path indicado...\n");
+                free(newAbsName);
+                free(absOldName);
+                return 1;
+            }
+            //Si lo es, hay que mirar que el path nuevo generado para los hijos quepa
+            //comprobamos uno a uno...
+            int i;
+            int longPathFs;
+            int longPathAbsOldName = strlen(absOldName);
+            int longPathAbsNewName = strlen(longPathAbsNewName);
+            for(i = 1; i < FILESYSTEM_SIZE; i++){
+                longPathFs = strlen(fs[i].path);
+                if(longPathFs-longPathAbsOldName+longPathAbsNewName >= LONGEST_FILENAME){
+                    printf("Uno de los hijos excedería el nombre al cambiar el nombre, abortando...\n");
+                    free(newAbsName);
+                    free(absOldName);
+                    return 1;
+                }
+            }
+            //Una vez hecho esto, se vuelve a recorrer la lista y se cambian los hijos a la nueva dirección
+            for(i = 1; i < FILESYSTEM_SIZE; i++){
+                //Mirar los parámetros, no est
+                reemplazar_prefijo(fs[i].path, absOldName, newAbsName);
+            }
+
+        }
+
+
+
     }
     else{
         //oldName es un fichero, miramos si la operaciónes es mover o cambiar nombre
@@ -294,6 +407,7 @@ int renameItem(FileSystemInfo* fs, const char* oldName, const char* newName) {
             return 0;
         }
     }
+    free(absOldName);
     return 1;
 }
 
@@ -307,10 +421,25 @@ int main() {
 
     init(filename, &fs, &filesize, &fd, &st);
 
-    removeDir(fs,"JuanDir");
+    createDir(fs,"Dir1");
+
+    changeDirectory(fs,"Dir1");
+
+    createDir(fs,"Dir12");
+
+    changeDirectory(fs,"Dir12");
+
+    createDir(fs,"DirPrueba");
+
+    changeDirectory(fs,"..");
+
+    renameItem(fs,"Dir12/","..");
 
     printFileSystemState(fs,"temp.txt");
     cleanup(fs, filesize, fd);
 
     return 0;
 }
+
+//Casos de fallo para rename:
+//Por ahora no ha encontrado el path para directorio a directorio...
