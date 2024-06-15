@@ -13,7 +13,7 @@ void print_time(time_t raw_time) {
 }
 
 // Nos devuelve el último bloque que esté libre
-int nextEmptyBlock(FileSystemInfo *fs){
+int nextEmptyBlock(){
     for(int i = 1; i < FILESYSTEM_SIZE; i++){
         if(strcmp(fs[i].path,"")==0){
             return i;
@@ -23,7 +23,7 @@ int nextEmptyBlock(FileSystemInfo *fs){
 }
 
 // Nos devuelve el último bloque ocupado (ha de tener next a -1)
-int lastUsedBlock(FileSystemInfo *fs){
+int lastUsedBlock(){
     if(fs[0].siguiente==-1){
         return 0;
     }
@@ -81,47 +81,6 @@ char* buildFullPath(const char* filename){
 
     return newPath;
 }
-
-//~ char* buildFullPathDir(const char* filename){
-    //~ if(strcmp(filename,".")==0){
-        //~ return currentDir -> path;
-    //~ }
-    //~ if(strcmp(filename,"..")==0){
-        //~ if(strcmp(currentDir -> path,"/")==0){
-            //~ printf("Ya estás en / ...\n");
-            //~ return NULL;
-        //~ }
-
-        //~ int i = strlen(currentDir -> path)-2;
-        //~ while(i >= 0 && currentDir -> path[i] != '/'){
-            //~ i--;
-        //~ }
-        //~ char* retorno = malloc(sizeof(char)*(i+2));
-        //~ int j;
-        //~ for (j=0; j < i+1;j++){
-            //~ retorno[j] = currentDir -> path[j];
-        //~ }
-        //~ retorno[i+1]='\0';
-        //~ return retorno;
-    //~ }
-    //~ unsigned int size = strlen(filename) + strlen(currentDir -> path) +2;
-
-    //~ if(size >= LONGEST_FILENAME){
-        //~ return NULL;
-    //~ }
-
-    //~ char* newPath = (char*)malloc(LONGEST_FILENAME);
-    //~ if(newPath==NULL){
-        //~ printf("Error al reservar memoria para el path.");
-        //~ return NULL;
-    //~ }
-
-    //~ strcpy(newPath, currentDir -> path);
-    //~ strcat(newPath, filename);
-    //~ strcat(newPath,"/");
-
-    //~ return newPath;
-//~ }
 
 // Devuelve 0 si la cadena 1 es prefijo de la segunda. -1 en otro caso
 int isPrefix(const char* prefix, const char* secondChain){
@@ -186,7 +145,7 @@ char* ultimoElemento(const char *cadena) {
     return resultado;
 }
 
-int exists(FileSystemInfo* fs, const char* absoluteFilename){
+int exists(const char* absoluteFilename){
     int current = 0;
     while(fs[current].siguiente != -1 && strcmp(fs[current].path, absoluteFilename)!=0){
         current = fs[current].siguiente;
@@ -197,7 +156,7 @@ int exists(FileSystemInfo* fs, const char* absoluteFilename){
     return -1;
 }
 
-void printFileSystemState(FileSystemInfo *fs, const char *filename) {
+void printFileSystemState(const char *filename) {
     FILE *file = fopen(filename, "w");
     if (file == NULL) {
         perror("fopen");

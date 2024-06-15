@@ -12,7 +12,9 @@
 
 #define LONGEST_FILENAME 64  // Tamaño de path más largo permitido
 #define FILESYSTEM_SIZE 1024 // Número de entradas en el sistema de archivos
-#define INITIAL_BLOCK_SIZE 65536
+
+#define DATASYSTEM_SIZE 1024 // Número de entradas en el sistema de datos
+#define BLOCKSIZE 1024       // Numero de chars por bloque
 
 typedef struct info {
     char path[LONGEST_FILENAME];
@@ -31,33 +33,39 @@ typedef struct data{
 	int firstDataBlock;
 	int currentBlockSize;
 	unsigned long totalSize;
-	char* data;
+	char data[BLOCKSIZE];
 	int siguiente;
-} dataFile;
+} DataSystemInfo;
+
+extern DataSystemInfo* ds;
+extern FileSystemInfo* fs;
+
+extern int* fileDescriptor;
+extern int* dataDescriptor;
 
 extern FileSystemInfo* currentDir;
-//~ dataFile* mydata;
 
 // Declaraciones de funciones de fileSystemLib.c
-void init(const char *filename, FileSystemInfo **fs, size_t *filesize, int *fd, struct stat *st);
-void cleanup(FileSystemInfo *fs, size_t filesize, int fd);
-void changeDirectory(FileSystemInfo *fs, const char* newDir);
-int createDir(FileSystemInfo *fs, const char* filename);
-void removeDir(FileSystemInfo *fs, const char* filename);
-int renameItem(FileSystemInfo *fs, const char* oldName, const char* newName);
-void borrar(FileSystemInfo *fs, const char* absolutePath);
+void initialize_filesystem();
+void init(const char *filename);
+void cleanup();
+void changeDirectory(const char* newDir);
+int createDir(const char* filename);
+void removeDir(const char* filename);
+//int renameItem(FileSystemInfo *fs, const char* oldName, const char* newName);
+void borrar(const char* absolutePath);
 
 
 // Separador entre las declaraciones de fileSystemLib y fileSystemUtils
 // Declaraciones de funciones de fileSystemUtils.c
-int exists(FileSystemInfo* fs, const char* absoluteFilename);
+int exists(const char* absoluteFilename);
 void print_time(time_t raw_time);
-int nextEmptyBlock(FileSystemInfo *fs);
-int lastUsedBlock(FileSystemInfo *fs);
+int nextEmptyBlock();
+int lastUsedBlock();
 char* buildFullPath(const char* filename);
 //char* buildFullPathDir(const char* filename);
 int isPrefix(const char* prefix, const char* secondChain);
-void printFileSystemState(FileSystemInfo *fs, const char *filename);
+void printFileSystemState(const char *filename);
 
 
 #endif

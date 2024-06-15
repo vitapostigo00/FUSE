@@ -9,9 +9,9 @@
 #include <assert.h>
 #include "fuseHeaders.h"
 
-FileSystemInfo* currentDir= NULL;
+FileSystemInfo* currentDir = NULL;
 
-void initialize_filesystem(FileSystemInfo *fs) {
+void initialize_filesystem() {
     printf("Initializing filesystem: Setting up root and clearing blocks.\n");
     fs[0].hasData = -1;
     fs[0].path[0]='\0';
@@ -41,16 +41,19 @@ void initialize_filesystem(FileSystemInfo *fs) {
 }
 
 
-void init(const char *filename, FileSystemInfo **fs, size_t *filesize, int *fd, struct stat *st) {
+void init(const char *filename) {
+    size_t* filesize;
+    struct stat st;
+
     printf("Opening filesystem storage file: %s\n", filename);
-    *fd = open(filename, O_RDWR | O_CREAT, 0666);
-    if (*fd == -1) {
+    *fileDescriptor = open(filename, O_RDWR | O_CREAT, 0666);
+    if (*fileDescriptor == -1) {
         perror("Failed to open file");
         exit(EXIT_FAILURE);
     }
     printf("File opened successfully.\n");
 
-    if (fstat(*fd, st) == -1) {
+    if (fstat(*fileDescriptor, st) == -1) {
         perror("Failed to stat file");
         exit(EXIT_FAILURE);
     }
@@ -60,7 +63,7 @@ void init(const char *filename, FileSystemInfo **fs, size_t *filesize, int *fd, 
     printf("Expected filesystem size: %zu bytes.\n", *filesize);
     if (st->st_size != *filesize) {
         printf("Adjusting file size...\n");
-        if (ftruncate(*fd, *filesize) == -1) {
+        if (ftruncate(*fileDescriptor, *filesize) == -1) {
             perror("Failed to truncate file");
             exit(EXIT_FAILURE);
         }
@@ -68,7 +71,7 @@ void init(const char *filename, FileSystemInfo **fs, size_t *filesize, int *fd, 
     }
 
     printf("Mapping file to memory.\n");
-    *fs = mmap(NULL, *filesize, PROT_READ | PROT_WRITE, MAP_SHARED, *fd, 0);
+    *fs = mmap(NULL, *filesize, PROT_READ | PROT_WRITE, MAP_SHARED, *fileDescriptor, 0);
     if (*fs == MAP_FAILED) {
         perror("Failed to map file to memory");
         exit(EXIT_FAILURE);
@@ -85,7 +88,10 @@ void init(const char *filename, FileSystemInfo **fs, size_t *filesize, int *fd, 
 }
 
 
-void cleanup(FileSystemInfo *fs, size_t filesize, int fd) {
+void cleanup() {
+
+    size_t filesize = FILESYSTEM_SIZE * sizeof(FileSystemInfo);
+
     if (msync(fs, filesize, MS_SYNC) == -1) {
         perror("msync");
         exit(EXIT_FAILURE);
@@ -96,10 +102,10 @@ void cleanup(FileSystemInfo *fs, size_t filesize, int fd) {
         exit(EXIT_FAILURE);
     }
 
-    close(fd);
+    close(fileDescriptor);
 }
 
-void changeDirectory(FileSystemInfo *fs, const char* newDir){
+void changeDirectory (const char* newDir){
     int directorioACambiar;
 
     char* fullPathString = buildFullPath(newDir);
@@ -122,7 +128,7 @@ void changeDirectory(FileSystemInfo *fs, const char* newDir){
     free(fullPathString);
 }
 
-int createDir(FileSystemInfo* fs, const char* filename){
+int createDir(const char* filename){
     int emptyBlock;
     int lastBlock;
 	char* baseName = strchr(filename, '/') + 1; // Obtiene solo el nombre base del path
@@ -131,11 +137,6 @@ int createDir(FileSystemInfo* fs, const char* filename){
         printf ("Illegal character in the dir to build.\n");
         return -1;
     }
-
-    //~ if(strchr(filename,'/')!=NULL){
-        //~ printf ("Illegal character in the dir to build.\n");
-        //~ return -1;
-    //~ }
 
     char* fullPathString = buildFullPath(filename);
     if(fullPathString==NULL){
@@ -176,7 +177,7 @@ int createDir(FileSystemInfo* fs, const char* filename){
     return 0;
 }
 
-void borrar(FileSystemInfo* fs, const char* absolutePath){
+void borrar(const char* absolutePath){
     int actual = 0;
     int posterior = fs[0].siguiente;
 
