@@ -1,4 +1,7 @@
 #include "fuseHeaders.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 void print_time(time_t raw_time) {
     struct tm *timeinfo;
@@ -9,8 +12,8 @@ void print_time(time_t raw_time) {
     printf("%s\n", buffer);
 }
 
-//Nos devuelve el último bloque que esté libre
-int nextEmtpyBlock(FileSystemInfo *fs){
+// Nos devuelve el último bloque que esté libre
+int nextEmptyBlock(FileSystemInfo *fs){
     for(int i = 1; i < FILESYSTEM_SIZE; i++){
         if(strcmp(fs[i].path,"")==0){
             return i;
@@ -19,9 +22,8 @@ int nextEmtpyBlock(FileSystemInfo *fs){
     return -1;
 }
 
-//Nos devuelve el último bloque ocupado (ha de tener next a -1)
+// Nos devuelve el último bloque ocupado (ha de tener next a -1)
 int lastUsedBlock(FileSystemInfo *fs){
-
     if(fs[0].siguiente==-1){
         return 0;
     }
@@ -38,10 +40,9 @@ int lastUsedBlock(FileSystemInfo *fs){
     }
 
     return -1;
-
 }
 
-char* buildFullPathGeneral(const char* filename){
+char* buildFullPath(const char* filename){
     if(strcmp(filename,".")==0){
         return currentDir -> path;
     }
@@ -81,50 +82,49 @@ char* buildFullPathGeneral(const char* filename){
     return newPath;
 }
 
+//~ char* buildFullPathDir(const char* filename){
+    //~ if(strcmp(filename,".")==0){
+        //~ return currentDir -> path;
+    //~ }
+    //~ if(strcmp(filename,"..")==0){
+        //~ if(strcmp(currentDir -> path,"/")==0){
+            //~ printf("Ya estás en / ...\n");
+            //~ return NULL;
+        //~ }
 
-char* buildFullPathDir(const char* filename){
-    if(strcmp(filename,".")==0){
-        return currentDir -> path;
-    }
-    if(strcmp(filename,"..")==0){
-        if(strcmp(currentDir -> path,"/")==0){
-            printf("Ya estás en / ...\n");
-            return NULL;
-        }
+        //~ int i = strlen(currentDir -> path)-2;
+        //~ while(i >= 0 && currentDir -> path[i] != '/'){
+            //~ i--;
+        //~ }
+        //~ char* retorno = malloc(sizeof(char)*(i+2));
+        //~ int j;
+        //~ for (j=0; j < i+1;j++){
+            //~ retorno[j] = currentDir -> path[j];
+        //~ }
+        //~ retorno[i+1]='\0';
+        //~ return retorno;
+    //~ }
+    //~ unsigned int size = strlen(filename) + strlen(currentDir -> path) +2;
 
-        int i = strlen(currentDir -> path)-2;
-        while(i >= 0 && currentDir -> path[i] != '/'){
-            i--;
-        }
-        char* retorno = malloc(sizeof(char)*(i+2));
-        int j;
-        for (j=0; j < i+1;j++){
-            retorno[j] = currentDir -> path[j];
-        }
-        retorno[i+1]='\0';
-        return retorno;
-    }
-    unsigned int size = strlen(filename) + strlen(currentDir -> path) +2;
+    //~ if(size >= LONGEST_FILENAME){
+        //~ return NULL;
+    //~ }
 
-    if(size >= LONGEST_FILENAME){
-        return NULL;
-    }
+    //~ char* newPath = (char*)malloc(LONGEST_FILENAME);
+    //~ if(newPath==NULL){
+        //~ printf("Error al reservar memoria para el path.");
+        //~ return NULL;
+    //~ }
 
-    char* newPath = (char*)malloc(LONGEST_FILENAME);
-    if(newPath==NULL){
-        printf("Error al reservar memoria para el path.");
-        return NULL;
-    }
+    //~ strcpy(newPath, currentDir -> path);
+    //~ strcat(newPath, filename);
+    //~ strcat(newPath,"/");
 
-    strcpy(newPath, currentDir -> path);
-    strcat(newPath, filename);
-    strcat(newPath,"/");
+    //~ return newPath;
+//~ }
 
-    return newPath;
-}
-
-//Devuelve 0 si la cadena 1 es prefijo de la segunda. -1 en otro caso
-int isPrefix(char* prefix, char* secondChain){
+// Devuelve 0 si la cadena 1 es prefijo de la segunda. -1 en otro caso
+int isPrefix(const char* prefix, const char* secondChain){
     if(strlen(prefix) > strlen(secondChain)){
         return -1;
     }
@@ -138,7 +138,7 @@ int isPrefix(char* prefix, char* secondChain){
 }
 
 // Función para reemplazar el prefijo de `cadena` con `nuevo_prefijo`
-void reemplazar_prefijo(char *cadena, char *prefijo, char *nuevo_prefijo) {
+void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_prefijo) {
     // Verificar si `prefijo` es realmente un prefijo de `cadena`
     if (isPrefix(prefijo, cadena)==0) {
         // Calcular el tamaño de la parte de la cadena después del prefijo
@@ -186,8 +186,7 @@ char* ultimoElemento(const char *cadena) {
     return resultado;
 }
 
-//Devuelve -1 si no existía el path, si no devuelve la posicion del array donde se encuentra.
-int exists(FileSystemInfo* fs, char* absoluteFilename){
+int exists(FileSystemInfo* fs, const char* absoluteFilename){
     int current = 0;
     while(fs[current].siguiente != -1 && strcmp(fs[current].path, absoluteFilename)!=0){
         current = fs[current].siguiente;
