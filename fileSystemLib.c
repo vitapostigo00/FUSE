@@ -113,7 +113,7 @@ void changeDirectory (const char* newDir){
         return;
     }
 
-    directorioACambiar = exists(fs, fullPathString);
+    directorioACambiar = exists(fullPathString);
 
     if(directorioACambiar==-1){
         printf("Path doesn't exist.\n");
@@ -143,7 +143,7 @@ int createDir(const char* filename){
         return -1;
     }
 
-    if(exists(fs, fullPathString)!=-1){
+    if(exists(fullPathString)!=-1){
         printf("Path already exists.\n");
         free(fullPathString);
         return -1;
@@ -208,7 +208,7 @@ void borrar(const char* absolutePath){
     fs[posterior].nlink = 0;
 }
 
-void removeDir(FileSystemInfo* fs, const char* filename){
+void removeDir(const char* filename){
     char* fullPathString = buildFullPath(filename);
     
     if(fullPathString==NULL){
@@ -221,7 +221,7 @@ void removeDir(FileSystemInfo* fs, const char* filename){
         return;
     }
 
-    int saveExist = exists(fs, fullPathString);
+    int saveExist = exists(fullPathString);
     if(saveExist == -1){
         printf("Directory doesn't exist.\n");
         free(fullPathString);
