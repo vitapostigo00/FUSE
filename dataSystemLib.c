@@ -9,6 +9,11 @@
 #include <unistd.h>
 #include "fuseHeaders.h"
 
+extern DataSystemInfo *ds;
+extern size_t dataFilesize;
+extern int dataFd;
+extern struct stat dataSt;
+
 
 void initialize_datasystem() {
     for (int i = 0; i < DATASYSTEM_SIZE; i++) {
@@ -21,32 +26,32 @@ void initialize_datasystem() {
 
 void init_datasystem(const char *filename) {
 
-    fd = open(filename, O_RDWR | O_CREAT, 0666);
-    if (fd == -1) {
+    dataFd = open(filename, O_RDWR | O_CREAT, 0666);
+    if (dataFd == -1) {
         perror("open");
         exit(EXIT_FAILURE);
     }
 
-    if (fstat(fd, &st) == -1) {         //Se ha cambiado de dstat a fstat, comprobar esto
+    if (fstat(dataFd, &dataSt) == -1) {         //Se ha cambiado de dstat a fstat, comprobar esto
         perror("dstat");
         exit(EXIT_FAILURE);
     }
 
-    filesize = DATASYSTEM_SIZE * sizeof(DataSystemInfo) + DATASYSTEM_SIZE * BLOCKSIZE;
-    if (st.st_size != filesize) {
-        if (ftruncate(fd, filesize) == -1) {
+    dataFilesize = DATASYSTEM_SIZE * sizeof(DataSystemInfo) + DATASYSTEM_SIZE * BLOCKSIZE;
+    if (dataSt.st_size != dataFilesize) {       //Mirar si es tb st.st_size o dataSt.dataSt_size
+        if (ftruncate(dataFd, dataFilesize) == -1) {
             perror("ftruncate");
             exit(EXIT_FAILURE);
         }
     }
 
-    ds = mmap(NULL, DATASYSTEM_SIZE * sizeof(DataSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    ds = mmap(NULL, DATASYSTEM_SIZE * sizeof(DataSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
     if (ds == MAP_FAILED) {
         perror("mmap ds");
         exit(EXIT_FAILURE);
     }
 
-    if (st.st_size == 0) {
+    if (dataSt.st_size == 0) {                  //Mirar si es tb st.st_size o dataSt.dataSt_size
         initialize_datasystem();
     }
 

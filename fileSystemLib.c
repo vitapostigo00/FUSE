@@ -9,7 +9,13 @@
 #include <assert.h>
 #include "fuseHeaders.h"
 
-FileSystemInfo* currentDir = NULL;
+//HAY QUE MIRAR SI LAS EXTERNAS SON ESTAS O LAS DEL HEADERS
+extern FileSystemInfo* currentDir = NULL;
+extern FileSystemInfo* fs;
+extern size_t filesize;
+extern int fd;
+extern struct stat st;
+
 
 void initialize_filesystem() {
     printf("Initializing filesystem: Setting up root and clearing blocks.\n");
@@ -41,6 +47,39 @@ void initialize_filesystem() {
 }
 
 void init(const char *filename) {
+
+    fd = open(filename, O_RDWR | O_CREAT, 0666);
+    if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fstat(fd, &st) == -1) {         //Se ha cambiado de dstat a fstat, comprobar esto
+        perror("dstat");
+        exit(EXIT_FAILURE);
+    }
+
+    filesize = FILESYSTEM_SIZE * sizeof(FileSystemInfo);
+    if (st.st_size != filesize) {
+        if (ftruncate(fd, filesize) == -1) {
+            perror("ftruncate");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    fs = mmap(NULL, FILESYSTEM_SIZE * sizeof(FileSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
+    if (ds == MAP_FAILED) {
+        perror("mmap fs");
+        exit(EXIT_FAILURE);
+    }
+
+    if (st.st_size == 0) {
+        initialize_datasystem();
+    }
+
+    //Los datos antiguos son a partir de aqui...
+
+    /*
     size_t filesize;
     struct stat st;
 
@@ -96,6 +135,8 @@ void init(const char *filename) {
     printf("Filesystem initialization complete.\n");
 
     close(fileDescriptor); // Buena práctica cerrar el descriptor de archivo una vez que ya no se necesita
+
+    */
 }
 
 

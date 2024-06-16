@@ -29,8 +29,12 @@ typedef struct info {
     int hasData;
 } FileSystemInfo;
 
-extern FileSystemInfo* fs;
-extern int fileDescriptor;
+FileSystemInfo* fs;
+size_t filesize;
+int fd;
+struct stat st;
+
+extern FileSystemInfo* currentDir;
 
 typedef struct data{
 	int firstDataBlock;
@@ -41,11 +45,9 @@ typedef struct data{
 } DataSystemInfo;
 
 DataSystemInfo *ds;
-size_t filesize;
-int fd;
-struct stat st;
-
-extern FileSystemInfo* currentDir;
+size_t dataFilesize;
+int dataFd;
+struct stat dataSt;
 
 // Declaraciones de funciones de fileSystemLib.c
 void initialize_filesystem();
