@@ -20,7 +20,7 @@ typedef struct info {
     char path[LONGEST_FILENAME];
     int siguiente;
     time_t creation_time;
-    time_t last_access;
+    time_t last_access;             
     time_t last_modification;
     uid_t uid;
     gid_t gid;
@@ -29,19 +29,21 @@ typedef struct info {
     int hasData;
 } FileSystemInfo;
 
+extern FileSystemInfo* fs;
+extern int fileDescriptor;
+
 typedef struct data{
 	int firstDataBlock;
-	int currentBlockSize;
+    int currentBlockSize;
 	unsigned long totalSize;
 	char data[BLOCKSIZE];
 	int siguiente;
 } DataSystemInfo;
 
-extern DataSystemInfo* ds;
-extern FileSystemInfo* fs;
-
-extern int fileDescriptor;
-extern int dataDescriptor;
+DataSystemInfo *ds;
+size_t filesize;
+int fd;
+struct stat st;
 
 extern FileSystemInfo* currentDir;
 
