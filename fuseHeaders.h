@@ -14,7 +14,7 @@
 #define FILESYSTEM_SIZE 1024 // Número de entradas en el sistema de archivos
 
 #define DATASYSTEM_SIZE 1024 // Número de entradas en el sistema de datos
-#define BLOCKSIZE 1024       // Numero de chars por bloque
+#define BLOCKSIZE 128       // Numero de bytes por bloque
 
 typedef struct info {
     char path[LONGEST_FILENAME];
@@ -68,6 +68,6 @@ char* buildFullPath(const char* filename);
 //char* buildFullPathDir(const char* filename);
 int isPrefix(const char* prefix, const char* secondChain);
 void printFileSystemState(const char *filename);
-
+int subdir_inmediato(const char* parent,const char* child);
 
 #endif

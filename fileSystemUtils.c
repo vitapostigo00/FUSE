@@ -12,6 +12,24 @@ void print_time(time_t raw_time) {
     printf("%s\n", buffer);
 }
 
+int subdir_inmediato(const char* parent,const char* child) {
+    size_t parent_len = strlen(parent);
+    size_t child_len = strlen(child);
+
+    if (parent[parent_len - 1] == '/') {
+        parent_len--;
+    }
+
+    // Asegurarse de que 'child' comienza con 'parent' y que el siguiente caracter es '/'
+    if (strncmp(parent, child, parent_len) == 0 && child[parent_len] == '/') {
+        // Verificar que solo hay un nivel de directorio de diferencia
+        const char* rest = child + parent_len + 1;
+        // Verificar que no hay más slashes después del primer nivel
+        return (strchr(rest, '/') == NULL || strchr(rest, '/') == rest + strlen(rest) - 1);
+    }
+    return 0;
+}
+
 // Nos devuelve el último bloque que esté libre
 int nextEmptyBlock(){
     for(int i = 1; i < FILESYSTEM_SIZE; i++){

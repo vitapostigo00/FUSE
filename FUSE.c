@@ -26,43 +26,51 @@ static struct fuse_operations fs_oper = {
 
 static const char *fileSystemData = "filesystem.bin";
 FileSystemInfo* fs = NULL;
-int fileDescriptor = 0;
 
 
 // Función para obtener atributos de un archivo o directorio
 static int fs_getattr(const char *path, struct stat *stbuf) {
     printf("fs_getattr: Path = %s\n", path);
     memset(stbuf, 0, sizeof(struct stat));
-	
-	printf("Dir to show: %s\n", fs[1].path);
-	fflush(stdout);
-	
-	if(fs==NULL){
-		printf("Albacete");
-		fflush(stdout);
-	}
+	int idx= exists(path);
 	
     if (strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
-        return 0;
-    }
-
-    int index = exists(path);
-    if (index == -1) {
-        return -ENOENT;
-    }
+        stbuf->st_mode = fs[0].mode;
+        stbuf->st_nlink = fs[0].nlink + 2;
+        stbuf->st_atime = fs[0].last_access;
+        stbuf->st_mtime = fs[0].last_modification;
+        stbuf->st_ctime = fs[0].creation_time;
+		stbuf->st_uid= fs[0].uid;
+		stbuf->st_gid= fs[0].gid;
+    } else if((idx != -1) && (fs[idx].hasData == -1)){
+		stbuf->st_mode = fs[idx].mode;
+        stbuf->st_nlink = fs[idx].nlink + 2;
+        stbuf->st_atime = fs[idx].last_access;
+        stbuf->st_mtime = fs[idx].last_modification;
+        stbuf->st_ctime = fs[idx].creation_time;
+		stbuf->st_uid= fs[idx].uid;
+		stbuf->st_gid= fs[idx].gid;
+	} else if ((idx != -1) && (fs[idx].hasData == -1)){
+		stbuf->st_mode = fs[idx].mode;
+        stbuf->st_nlink = 1;
+        stbuf->st_atime = fs[idx].last_access;
+        stbuf->st_mtime = fs[idx].last_modification;
+        stbuf->st_ctime = fs[idx].creation_time;
+		stbuf->st_uid= fs[idx].uid;
+		stbuf->st_gid= fs[idx].gid;
+	} else {
+		return -ENOENT;
+	} 
 
     return 0;
 }
 
 // Función para leer un directorio
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+    (void) offset;
+	(void) fi;
     printf("fs_readdir: Path = %s\n", path);
-	if(fs==NULL){
-		printf("Albacete");
-		fflush(stdout);
-	}
+	int idx= exists(path);
 	
     if (strcmp(path, "/") == 0) {
         if (filler(buf, ".", NULL, 0) != 0 || filler(buf, "..", NULL, 0) != 0) {
@@ -77,8 +85,21 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
                 }
             }
         }
-    }
-
+    } else if((idx != -1) && (fs[idx].hasData == -1)){
+		if (filler(buf, ".", NULL, 0) != 0 || filler(buf, "..", NULL, 0) != 0) {
+            return -ENOMEM;
+        }
+        for (int i=0; i < FILESYSTEM_SIZE; i++){
+            if (fs[i].siguiente != -1) { // Revisa si la entrada es válida
+                const char *name = fs[i].path + 1; // Omitir el primer '/' para las entradas
+                if (filler(buf, name, NULL, 0) != 0) {
+                    return -ENOMEM;
+                }
+           }
+		}
+	} else {
+		return -ENOENT;
+	}
     return 0;
 }
 
@@ -97,7 +118,6 @@ static int fs_mkdir(const char *path, mode_t mode) {
         printf("fs_mkdir: Failed to create directory.\n");
         return -EPERM;
     }
-
     return 0;
 }
 

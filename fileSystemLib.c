@@ -183,7 +183,7 @@ int createDir(const char* filename){
     fs[emptyBlock].uid = getuid();
     fs[emptyBlock].gid = getgid();
     fs[emptyBlock].mode = S_IFDIR | 0755;
-    fs[emptyBlock].nlink = 1;
+    fs[emptyBlock].nlink = 2;
 
     free(fullPathString);
     

@@ -7,22 +7,8 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include "fuseHeaders.h"
 
-#define DATASYSTEM_SIZE 1024 // Número de entradas en el sistema de datos
-#define BLOCKSIZE 128        // Numero de chars por bloque
-
-typedef struct data{
-	int firstDataBlock;
-    int currentBlockSize;
-	unsigned long totalSize;
-	char data[BLOCKSIZE];
-	int siguiente;
-} DataSystemInfo;
-
-extern DataSystemInfo *ds;
-extern size_t filesize;
-extern int fd;
-extern struct stat st;
 
 void initialize_datasystem() {
     for (int i = 0; i < DATASYSTEM_SIZE; i++) {
