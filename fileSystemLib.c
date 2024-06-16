@@ -40,52 +40,65 @@ void initialize_filesystem() {
     printf("Filesystem initialized: Root set and all blocks cleared.\n");
 }
 
-
 void init(const char *filename) {
-    size_t* filesize;
+    size_t filesize;
     struct stat st;
 
     printf("Opening filesystem storage file: %s\n", filename);
-    *fileDescriptor = open(filename, O_RDWR | O_CREAT, 0666);
-    if (*fileDescriptor == -1) {
+    int fileDescriptor = open(filename, O_RDWR | O_CREAT, 0666);
+    if (fileDescriptor == -1) {
         perror("Failed to open file");
         exit(EXIT_FAILURE);
     }
     printf("File opened successfully.\n");
 
-    if (fstat(*fileDescriptor, st) == -1) {
+    if (fstat(fileDescriptor, &st) == -1) {
         perror("Failed to stat file");
+        close(fileDescriptor);
         exit(EXIT_FAILURE);
     }
-    printf("File size obtained: %ld bytes.\n", st->st_size);
+    printf("File size obtained: %ld bytes.\n", st.st_size);
 
-    *filesize = FILESYSTEM_SIZE * sizeof(FileSystemInfo);
-    printf("Expected filesystem size: %zu bytes.\n", *filesize);
-    if (st->st_size != *filesize) {
+    filesize = FILESYSTEM_SIZE * sizeof(FileSystemInfo);
+    printf("Expected filesystem size: %zu bytes.\n", filesize);
+
+    if (st.st_size != filesize) {
         printf("Adjusting file size...\n");
-        if (ftruncate(*fileDescriptor, *filesize) == -1) {
+        if (ftruncate(fileDescriptor, filesize) == -1) {
             perror("Failed to truncate file");
+            close(fileDescriptor);
             exit(EXIT_FAILURE);
         }
-        printf("File size adjusted.\n");
+        // Necesitas asegurarte de que fstat se actualice después de ftruncate
+        if (fstat(fileDescriptor, &st) == -1 || st.st_size != filesize) {
+            perror("Failed to verify file size after adjustment");
+            close(fileDescriptor);
+            exit(EXIT_FAILURE);
+        }
+        printf("File size adjusted to %ld bytes.\n", st.st_size);
     }
 
     printf("Mapping file to memory.\n");
-    *fs = mmap(NULL, *filesize, PROT_READ | PROT_WRITE, MAP_SHARED, *fileDescriptor, 0);
-    if (*fs == MAP_FAILED) {
+    FileSystemInfo* fs = mmap(NULL, filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fileDescriptor, 0);
+    if (fs == MAP_FAILED) {
         perror("Failed to map file to memory");
+        close(fileDescriptor);
         exit(EXIT_FAILURE);
     }
     printf("File mapped successfully.\n");
 
-    if (st->st_size == 0) {
+    if (st.st_size == 0) {
         printf("Initializing new filesystem structure.\n");
-        initialize_filesystem(*fs);
+        initialize_filesystem(fs);
     }
 
-    currentDir = *fs;
+    currentDir = fs;
     printf("Filesystem initialization complete.\n");
+
+    close(fileDescriptor); // Buena práctica cerrar el descriptor de archivo una vez que ya no se necesita
 }
+
+
 
 
 void cleanup() {
@@ -231,7 +244,7 @@ void removeDir(const char* filename){
     for (int i = 0; i < FILESYSTEM_SIZE; i++) {
         if (strlen(fs[i].path) != 0 && isPrefix(fullPathString, fs[i].path)==0) {
             printf("Se va a borrar: %s\n",fs[i].path);
-            borrar(fs, fs[i].path);
+            borrar(fs[i].path);
         }
     }
 

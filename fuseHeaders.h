@@ -40,8 +40,8 @@ typedef struct data{
 extern DataSystemInfo* ds;
 extern FileSystemInfo* fs;
 
-extern int* fileDescriptor;
-extern int* dataDescriptor;
+extern int fileDescriptor;
+extern int dataDescriptor;
 
 extern FileSystemInfo* currentDir;
 

@@ -8,7 +8,6 @@
 #include <fcntl.h>
 #include "fuseHeaders.h"
 
-
 // Prototipos de funciones
 static int fs_getattr(const char *path, struct stat *stbuf);
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
@@ -26,15 +25,14 @@ static struct fuse_operations fs_oper = {
 };
 
 static const char *fileSystemData = "filesystem.bin";
-extern FileSystemInfo* currentDir;
-
+FileSystemInfo* fs = NULL;
+int fileDescriptor = 0;
 
 
 // Función para obtener atributos de un archivo o directorio
 static int fs_getattr(const char *path, struct stat *stbuf) {
     printf("fs_getattr: Path = %s\n", path);
     memset(stbuf, 0, sizeof(struct stat));
-    FileSystemInfo *fs = (FileSystemInfo*)fuse_get_context()->private_data;
 	
 	printf("Dir to show: %s\n", fs[1].path);
 	fflush(stdout);
@@ -50,7 +48,7 @@ static int fs_getattr(const char *path, struct stat *stbuf) {
         return 0;
     }
 
-    int index = exists(fs, path);
+    int index = exists(path);
     if (index == -1) {
         return -ENOENT;
     }
@@ -61,7 +59,6 @@ static int fs_getattr(const char *path, struct stat *stbuf) {
 // Función para leer un directorio
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
     printf("fs_readdir: Path = %s\n", path);
-    FileSystemInfo *fs = (FileSystemInfo*)fuse_get_context()->private_data;
 	if(fs==NULL){
 		printf("Albacete");
 		fflush(stdout);
@@ -89,15 +86,13 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
 static int fs_mkdir(const char *path, mode_t mode) {
     printf("fs_mkdir: Path = %s\n", path);
 
-    FileSystemInfo *fs = (FileSystemInfo*)fuse_get_context()->private_data;
-
-    if (exists(fs, path) != -1) {
+    if (exists(path) != -1) {
         printf("fs_mkdir: Directory already exists.\n");
         return -EEXIST;
     }
 
     // Asignar valores apropiados a un nuevo directorio
-    int result = createDir(fs, path);
+    int result = createDir(path);
     if (result == -1) {
         printf("fs_mkdir: Failed to create directory.\n");
         return -EPERM;
@@ -110,9 +105,8 @@ static int fs_mkdir(const char *path, mode_t mode) {
 // Función para eliminar un directorio
 static int fs_rmdir(const char *path) {
     printf("fs_rmdir: Path = %s\n", path);
-    FileSystemInfo *fs = (FileSystemInfo*)fuse_get_context()->private_data;
 
-    if (exists(fs, path) == -1) {
+    if (exists(path) == -1) {
         return -ENOENT;
     }
 
@@ -122,7 +116,7 @@ static int fs_rmdir(const char *path) {
         }
     }
 
-    removeDir(fs, path);
+    removeDir(path);
     return 0;
 }
 
@@ -130,7 +124,7 @@ static int fs_rmdir(const char *path) {
 static void fs_destroy(void *userdata) {
     printf("fs_destroy: Destroying file system\n");
     FileSystemInfo *fs = (FileSystemInfo*)userdata;
-    printFileSystemState(fs, "salida");
+    printFileSystemState("salida");
     cleanup(fs, FILESYSTEM_SIZE * sizeof(FileSystemInfo), fileno(fopen(fileSystemData, "r")));
     printf("fs_destroy: File system destroyed\n");
 }
@@ -138,17 +132,13 @@ static void fs_destroy(void *userdata) {
 // Función principal
 int main(int argc, char *argv[])
 {
-	size_t filesize;
-    int fd;
-    struct stat st;
     // Verificar el número mínimo de argumentos y que los últimos dos no sean opciones (comienzan con '-')
     if ((argc < 3) || (argv[argc-2][0] == '-') || (argv[argc-1][0] == '-')) {
         fprintf(stderr, "Uso incorrecto de los parámetros. Debe ser: ./programa <archivo_datos> <punto_montaje>\n");
         return 1; // Termina el programa si los parámetros no son correctos
     }
 
-    FileSystemInfo* fs;
-	init(argv[argc-2], &fs, &filesize, &fd, &st);
+	init(argv[argc-2]);
     
     // Ajustar los argumentos para FUSE
     argv[argc-2] = argv[argc-1]; // Mueve el punto de montaje al lugar del fichero
