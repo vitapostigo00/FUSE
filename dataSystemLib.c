@@ -19,10 +19,10 @@ typedef struct data{
 	int siguiente;
 } DataSystemInfo;
 
-DataSystemInfo *ds;
-size_t filesize;
-int fd;
-struct stat st;
+extern DataSystemInfo *ds;
+extern size_t filesize;
+extern int fd;
+extern struct stat st;
 
 void initialize_datasystem() {
     for (int i = 0; i < DATASYSTEM_SIZE; i++) {
