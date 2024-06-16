@@ -33,7 +33,7 @@ void initialize_datasystem() {
     }
 }
 
-void init_filesystem(const char *filename) {
+void init_datasystem(const char *filename) {
 
     fd = open(filename, O_RDWR | O_CREAT, 0666);
     if (fd == -1) {
