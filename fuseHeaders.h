@@ -29,10 +29,10 @@ typedef struct info {
     int hasData;
 } FileSystemInfo;
 
-FileSystemInfo* fs;
-size_t filesize;
-int fd;
-struct stat st;
+extern FileSystemInfo* fs;
+extern size_t filesize;
+extern int fd;
+extern struct stat st;
 
 extern FileSystemInfo* currentDir;
 
@@ -44,10 +44,10 @@ typedef struct data{
 	int siguiente;
 } DataSystemInfo;
 
-DataSystemInfo *ds;
-size_t dataFilesize;
-int dataFd;
-struct stat dataSt;
+extern DataSystemInfo *ds;
+extern size_t dataFilesize;
+extern int dataFd;
+extern struct stat dataSt;
 
 // Declaraciones de funciones de fileSystemLib.c
 void initialize_filesystem();
@@ -71,5 +71,16 @@ char* buildFullPath(const char* filename);
 int isPrefix(const char* prefix, const char* secondChain);
 void printFileSystemState(const char *filename);
 int subdir_inmediato(const char* parent,const char* child);
+
+void initialize_datasystem();
+void init_datasystem(const char *filename);
+int primerElementoLibre();
+int hayEspacio(int numBloques);
+int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite);
+int insertData(char* filename);
+char* cat(int data);
+void escribirArchivoBinario(const char* nombreArchivo, int data, size_t tamano);
+void borrarFile(int data);
+size_t sizeOfFile(int data);
 
 #endif

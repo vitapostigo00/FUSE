@@ -25,7 +25,6 @@ static struct fuse_operations fs_oper = {
 };
 
 static const char *fileSystemData = "filesystem.bin";
-FileSystemInfo* fs = NULL;
 
 
 // Función para obtener atributos de un archivo o directorio

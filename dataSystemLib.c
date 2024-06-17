@@ -9,10 +9,10 @@
 #include <unistd.h>
 #include "fuseHeaders.h"
 
-extern DataSystemInfo *ds;
-extern size_t dataFilesize;
-extern int dataFd;
-extern struct stat dataSt;
+DataSystemInfo *ds;
+size_t dataFilesize;
+int dataFd;
+struct stat dataSt;
 
 
 void initialize_datasystem() {

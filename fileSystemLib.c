@@ -10,11 +10,11 @@
 #include "fuseHeaders.h"
 
 //HAY QUE MIRAR SI LAS EXTERNAS SON ESTAS O LAS DEL HEADERS
-extern FileSystemInfo* currentDir = NULL;
-extern FileSystemInfo* fs;
-extern size_t filesize;
-extern int fd;
-extern struct stat st;
+FileSystemInfo* currentDir;
+FileSystemInfo* fs;
+size_t filesize;
+int fd;
+struct stat st;
 
 
 void initialize_filesystem() {
@@ -67,14 +67,14 @@ void init(const char *filename) {
         }
     }
 
-    fs = mmap(NULL, FILESYSTEM_SIZE * sizeof(FileSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
-    if (ds == MAP_FAILED) {
+    fs = mmap(NULL, FILESYSTEM_SIZE * sizeof(FileSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (fs == MAP_FAILED) {
         perror("mmap fs");
         exit(EXIT_FAILURE);
     }
 
     if (st.st_size == 0) {
-        initialize_datasystem();
+        initialize_filesystem();
     }
 
     //Los datos antiguos son a partir de aqui...
@@ -156,7 +156,7 @@ void cleanup() {
         exit(EXIT_FAILURE);
     }
 
-    close(fileDescriptor);
+    close(fd);
 }
 
 void changeDirectory (const char* newDir){
