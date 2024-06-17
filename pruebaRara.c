@@ -4,6 +4,30 @@
 
 #define LONGEST_FILENAME 256
 
+char ultimoElemento[](const char *cadena) {
+    
+    if (strcmp(cadena, "/") == 0) {
+        return NULL;
+    }
+
+    int longitud = strlen(cadena);
+    int i = longitud - 1;
+
+    while (i >= 0 && cadena[i] != '/') {
+        i--;
+    }
+    
+    char* resultado = malloc(sizeof(char) * (longitud-i));
+    if (resultado == NULL) {
+        perror("No se pudo asignar memoria");
+        return NULL;
+    }
+    resultado[0]='\0';
+    strncpy(resultado, cadena + i +1, longitud - i);
+
+    return resultado;
+}
+
 int isPrefix(char* prefix, char* secondChain){
     if(strlen(prefix) > strlen(secondChain)){
         return -1;
@@ -17,31 +41,37 @@ int isPrefix(char* prefix, char* secondChain){
     return 0;
 }
 
-// Función para reemplazar el prefijo de `cadena` con `nuevo_prefijo`
-void reemplazar_prefijo(char *cadena,  char *prefijo,  char *nuevo_prefijo) {
-    // Verificar si `prefijo` es realmente un prefijo de `cadena`
-    if (isPrefix(prefijo, cadena)==0) {
-        // Calcular el tamaño de la parte de la cadena después del prefijo
-        size_t tamano_prefijo = strlen(prefijo);
-        size_t tamano_nuevo_prefijo = strlen(nuevo_prefijo);
-        size_t tamano_restante = strlen(cadena) - tamano_prefijo;
+int subdir_inmediato(const char* parent,const char* child) {
+    size_t parent_len = strlen(parent);
+    size_t child_len = strlen(child);
+    
+    if(parent_len >= child_len){
+		return -1;
+	}
+    
+    if(isPrefix(parent,child)==-1){
+		return -1;
+	}	
+    
+    int cont=0;
+    int i;
 
-        // Mover la parte restante de la cadena hacia adelante
-        memmove(cadena + tamano_nuevo_prefijo, cadena + tamano_prefijo, tamano_restante + 1);
+	for(i=parent_len-1;  i<child_len; i++ ){
+		if(child[i]=='/'){
+			cont++;
+			if(cont>1){
+				return -1;
+			}
+		}
+	}
 
-        // Copiar el nuevo prefijo en la posición correcta
-        memcpy(cadena, nuevo_prefijo, tamano_nuevo_prefijo);
-    }
+    return 0;
 }
 
+
 int main() {
-    char cadena1[LONGEST_FILENAME] = "/Dir1/Dir12/";
-    char cadena2[LONGEST_FILENAME] = "/Dir1/Dir12/DirPrueba/";
-    char *nuevo_prefijo = "/Dir12/";
 
-    reemplazar_prefijo(cadena2, cadena1, nuevo_prefijo);
-
-    printf("Resultado: %s\n", cadena2);
+    printf("Resultado: .%s.\n", ultimoElemento("/dir1"));
 
     return 0;
 }

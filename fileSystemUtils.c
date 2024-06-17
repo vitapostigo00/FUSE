@@ -15,18 +15,27 @@ void print_time(time_t raw_time) {
 int subdir_inmediato(const char* parent,const char* child) {
     size_t parent_len = strlen(parent);
     size_t child_len = strlen(child);
+    
+    if(parent_len >= child_len){
+		return -1;
+	}
+    
+    if(isPrefix(parent,child)==-1){
+		return -1;
+	}	
+    
+    int cont=0;
+    int i;
 
-    if (parent[parent_len - 1] == '/') {
-        parent_len--;
-    }
+	for(i=parent_len-1;  i<child_len; i++ ){
+		if(child[i]=='/'){
+			cont++;
+			if(cont>1){
+				return -1;
+			}
+		}
+	}
 
-    // Asegurarse de que 'child' comienza con 'parent' y que el siguiente caracter es '/'
-    if (strncmp(parent, child, parent_len) == 0 && child[parent_len] == '/') {
-        // Verificar que solo hay un nivel de directorio de diferencia
-        const char* rest = child + parent_len + 1;
-        // Verificar que no hay más slashes después del primer nivel
-        return (strchr(rest, '/') == NULL || strchr(rest, '/') == rest + strlen(rest) - 1);
-    }
     return 0;
 }
 
@@ -157,15 +166,9 @@ void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_pre
     }
 }
 
-char* ultimoElemento(const char *cadena) {
+char ultimoElemento(const char *cadena) {
     
     if (strcmp(cadena, "/") == 0) {
-        return NULL;
-    }
-
-    char* resultado = malloc(sizeof(char) * LONGEST_FILENAME);
-    if (resultado == NULL) {
-        perror("No se pudo asignar memoria");
         return NULL;
     }
 
@@ -175,9 +178,14 @@ char* ultimoElemento(const char *cadena) {
     while (i >= 0 && cadena[i] != '/') {
         i--;
     }
-    strncpy(resultado, cadena + i + 1, longitud - i - 1);
-
-    resultado[longitud - i - 1] = '\0';
+    
+    char* resultado = malloc(sizeof(char) * (longitud-i));
+    if (resultado == NULL) {
+        perror("No se pudo asignar memoria");
+        return NULL;
+    }
+    resultado[0]='\0';
+    strncpy(resultado, cadena + i +1, longitud - i);
 
     return resultado;
 }

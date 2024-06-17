@@ -76,67 +76,7 @@ void init(const char *filename) {
     if (st.st_size == 0) {
         initialize_filesystem();
     }
-
-    //Los datos antiguos son a partir de aqui...
-
-    /*
-    size_t filesize;
-    struct stat st;
-
-    printf("Opening filesystem storage file: %s\n", filename);
-    int fileDescriptor = open(filename, O_RDWR | O_CREAT, 0666);
-    if (fileDescriptor == -1) {
-        perror("Failed to open file");
-        exit(EXIT_FAILURE);
-    }
-    printf("File opened successfully.\n");
-
-    if (fstat(fileDescriptor, &st) == -1) {
-        perror("Failed to stat file");
-        close(fileDescriptor);
-        exit(EXIT_FAILURE);
-    }
-    printf("File size obtained: %ld bytes.\n", st.st_size);
-
-    filesize = FILESYSTEM_SIZE * sizeof(FileSystemInfo);
-    printf("Expected filesystem size: %zu bytes.\n", filesize);
-
-    if (st.st_size != filesize) {
-        printf("Adjusting file size...\n");
-        if (ftruncate(fileDescriptor, filesize) == -1) {
-            perror("Failed to truncate file");
-            close(fileDescriptor);
-            exit(EXIT_FAILURE);
-        }
-        // Necesitas asegurarte de que fstat se actualice después de ftruncate
-        if (fstat(fileDescriptor, &st) == -1 || st.st_size != filesize) {
-            perror("Failed to verify file size after adjustment");
-            close(fileDescriptor);
-            exit(EXIT_FAILURE);
-        }
-        printf("File size adjusted to %ld bytes.\n", st.st_size);
-    }
-
-    printf("Mapping file to memory.\n");
-    FileSystemInfo* fs = mmap(NULL, filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fileDescriptor, 0);
-    if (fs == MAP_FAILED) {
-        perror("Failed to map file to memory");
-        close(fileDescriptor);
-        exit(EXIT_FAILURE);
-    }
-    printf("File mapped successfully.\n");
-
-    if (st.st_size == 0) {
-        printf("Initializing new filesystem structure.\n");
-        initialize_filesystem(fs);
-    }
-
-    currentDir = fs;
-    printf("Filesystem initialization complete.\n");
-
-    close(fileDescriptor); // Buena práctica cerrar el descriptor de archivo una vez que ya no se necesita
-
-    */
+	currentDir = &fs[0];
 }
 
 
@@ -185,12 +125,6 @@ void changeDirectory (const char* newDir){
 int createDir(const char* filename){
     int emptyBlock;
     int lastBlock;
-	char* baseName = strchr(filename, '/') + 1; // Obtiene solo el nombre base del path
-
-    if(strchr(baseName, '/') != NULL){
-        printf ("Illegal character in the dir to build.\n");
-        return -1;
-    }
 
     char* fullPathString = buildFullPath(filename);
     if(fullPathString==NULL){
@@ -203,14 +137,14 @@ int createDir(const char* filename){
         return -1;
     }
 
-    emptyBlock = nextEmptyBlock(fs);
+    emptyBlock = nextEmptyBlock();
     if(emptyBlock==-1){
         printf("File system is full.\n");
         free(fullPathString);
         return -1;
     }
 
-    lastBlock = lastUsedBlock(fs);
+    lastBlock = lastUsedBlock();
     assert(fs[lastBlock].siguiente == -1);
 
     fs[lastBlock].siguiente = emptyBlock;
@@ -224,7 +158,7 @@ int createDir(const char* filename){
     fs[emptyBlock].uid = getuid();
     fs[emptyBlock].gid = getgid();
     fs[emptyBlock].mode = S_IFDIR | 0755;
-    fs[emptyBlock].nlink = 2;
+    fs[emptyBlock].nlink = 0;
 
     free(fullPathString);
     
