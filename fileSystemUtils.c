@@ -77,7 +77,7 @@ char* buildFullPath(const char* filename) {
         while (i >= 0 && currentDir -> path[i] != '/') {
             i--;
         }
-        i--;
+        
         char* retorno = malloc(sizeof(char) * (i + 1));
         if (retorno == NULL) {
             printf("Error al reservar memoria.\n");
@@ -85,6 +85,18 @@ char* buildFullPath(const char* filename) {
         }
         strncpy(retorno, currentDir->path, i);
         retorno[i] = '\0';
+        return retorno;
+    }
+
+    if(strcmp(currentDir->path,"/")==0){//Si se da este caso, el path es directamente el parametro
+        if(strlen(filename)>=LONGEST_FILENAME){
+            printf("Tam maximo excedido");
+            return NULL;
+        }
+
+        char* retorno = malloc(sizeof(char)*LONGEST_FILENAME);
+        retorno[0] = '\0';
+        strcpy(retorno,filename);
         return retorno;
     }
 
