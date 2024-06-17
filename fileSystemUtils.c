@@ -60,42 +60,55 @@ int lastUsedBlock(){
     return -1;
 }
 
-char* buildFullPath(const char* filename){          //MIRAR cómo lo genera
-    if(strcmp(filename,".")==0){
-        return currentDir -> path;
+char* buildFullPath(const char* filename) {
+    if (strcmp(filename, ".") == 0) {
+        char* retorno = malloc(strlen(currentDir->path) + 1);
+        strcpy(retorno, currentDir->path);
+        return retorno;
     }
-    if(strcmp(filename,"..")==0){
-        if(strcmp(currentDir -> path,"/")==0){
+
+    if (strcmp(filename, "..") == 0) {
+        if (strcmp(currentDir->path, "/") == 0) {
             printf("Ya estás en / ...\n");
             return NULL;
         }
 
-        int i = strlen(currentDir -> path)-1;
-        while(i >= 0 && currentDir -> path[i] != '/'){
+        int i = strlen(currentDir->path) - 1;
+        while (i >= 0 && currentDir -> path[i] != '/') {
             i--;
         }
-        char* retorno = malloc(sizeof(char)*(i+1));
-        int j;
-        for (j=0; j < i+1 ; j++){
-            retorno[j] = currentDir -> path[j];
+        i--;
+        char* retorno = malloc(sizeof(char) * (i + 1));
+        if (retorno == NULL) {
+            printf("Error al reservar memoria.\n");
+            return NULL;
         }
-        retorno[i]='\0';
+        strncpy(retorno, currentDir->path, i);
+        retorno[i] = '\0';
         return retorno;
     }
-    unsigned int size = strlen(filename) + strlen(currentDir -> path) + 1;
 
-    if(size >= LONGEST_FILENAME){
+    unsigned int pathLen = strlen(currentDir->path);
+    unsigned int filenameLen = strlen(filename);
+    unsigned int size = pathLen + filenameLen + 2;
+
+    if (size >= LONGEST_FILENAME) {
         printf("El nuevo nombre de fichero pasa de la cantidad especificada\n");
         return NULL;
     }
 
-    char* newPath = (char*)malloc(LONGEST_FILENAME);
-    if(newPath==NULL){
+    char* newPath = (char*)malloc(size);
+    if (newPath == NULL) {
         printf("Error al reservar memoria para el path.\n");
         return NULL;
     }
 
-    strcpy(newPath, currentDir -> path);
+    strcpy(newPath, currentDir->path);
+
+    if (currentDir->path[pathLen - 1] != '/') {
+        strcat(newPath, "/");
+    }
+    
     strcat(newPath, filename);
 
     return newPath;
