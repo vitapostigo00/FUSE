@@ -101,8 +101,8 @@ int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite){
         ds[currentBlock].totalSize = tamano; 
 
         if(currentBlock==-1){
-            //Borrar
-            printf("Noooo");
+            printf("Error en la gestion, el archivo no ha sido guardado\n");
+            borrarFile(primBloque);
             return -1;
         }
 

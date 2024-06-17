@@ -60,7 +60,7 @@ int lastUsedBlock(){
     return -1;
 }
 
-char* buildFullPath(const char* filename){
+char* buildFullPath(const char* filename){          //MIRAR cómo lo genera
     if(strcmp(filename,".")==0){
         return currentDir -> path;
     }
@@ -70,27 +70,28 @@ char* buildFullPath(const char* filename){
             return NULL;
         }
 
-        int i = strlen(currentDir -> path)-2;
+        int i = strlen(currentDir -> path)-1;
         while(i >= 0 && currentDir -> path[i] != '/'){
             i--;
         }
-        char* retorno = malloc(sizeof(char)*(i+2));
+        char* retorno = malloc(sizeof(char)*(i+1));
         int j;
-        for (j=0; j < i+1;j++){
+        for (j=0; j < i+1 ; j++){
             retorno[j] = currentDir -> path[j];
         }
-        retorno[i+1]='\0';
+        retorno[i]='\0';
         return retorno;
     }
-    unsigned int size = strlen(filename) + strlen(currentDir -> path) +2;
+    unsigned int size = strlen(filename) + strlen(currentDir -> path) + 1;
 
     if(size >= LONGEST_FILENAME){
+        printf("El nuevo nombre de fichero pasa de la cantidad especificada\n");
         return NULL;
     }
 
     char* newPath = (char*)malloc(LONGEST_FILENAME);
     if(newPath==NULL){
-        printf("Error al reservar memoria para el path.");
+        printf("Error al reservar memoria para el path.\n");
         return NULL;
     }
 
@@ -132,33 +133,26 @@ void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_pre
 }
 
 char* ultimoElemento(const char *cadena) {
-    // Clona la cadena para no modificar el original
-    char cadena_copia[LONGEST_FILENAME];
-    char* resultado = malloc(sizeof(char)*LONGEST_FILENAME);
-    strncpy(cadena_copia, cadena, sizeof(cadena_copia) - 1);
-    cadena_copia[sizeof(cadena_copia) - 1] = '\0';
-
-    // Encuentra el último '/'
-    char *ultimo_slash = strrchr(cadena_copia, '/');
-
-    // Encuentra el penúltimo '/' si existe
-    char *penultimo_slash = NULL;
-    if (ultimo_slash != NULL) {
-        *ultimo_slash = '\0'; // Temporalmente termina la cadena aquí
-        penultimo_slash = strrchr(cadena_copia, '/');
+    
+    if (strcmp(cadena, "/") == 0) {
+        return NULL;
     }
 
-    // Restaura el último '/' en la copia de la cadena
-    if (ultimo_slash != NULL) {
-        *ultimo_slash = '/';
+    char* resultado = malloc(sizeof(char) * LONGEST_FILENAME);
+    if (resultado == NULL) {
+        perror("No se pudo asignar memoria");
+        return NULL;
     }
 
-    // Copia el resultado
-    if (penultimo_slash != NULL) {
-        strncpy(resultado, penultimo_slash + 1, strlen(penultimo_slash + 1) + 1);
-    } else {
-        strncpy(resultado, cadena, strlen(cadena) + 1);
+    int longitud = strlen(cadena);
+    int i = longitud - 1;
+
+    while (i >= 0 && cadena[i] != '/') {
+        i--;
     }
+    strncpy(resultado, cadena + i + 1, longitud - i - 1);
+
+    resultado[longitud - i - 1] = '\0';
 
     return resultado;
 }
