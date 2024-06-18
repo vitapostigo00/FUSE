@@ -2,7 +2,7 @@
 TARGET = mainfuse
 
 # Archivos fuente
-SRCS = FUSE.c fileSystemLib.c fileSystemUtils.c
+SRCS = FUSE.c fileSystemLib.c fileSystemUtils.c dataSystemLib.c
 
 # Dependencias de FUSE
 FUSE_CFLAGS = $(shell pkg-config fuse --cflags)

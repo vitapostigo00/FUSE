@@ -40,7 +40,7 @@ void initialize_filesystem() {
         fs[i].last_modification = time(NULL);
         fs[i].uid = getuid();
         fs[i].gid = getgid();
-        fs[i].mode = 0644;
+        fs[i].mode = 0;
         fs[i].nlink = 0;
     }
     printf("Filesystem initialized: Root set and all blocks cleared.\n");
@@ -67,7 +67,7 @@ void init(const char *filename) {
         }
     }
 
-    fs = mmap(NULL, FILESYSTEM_SIZE * sizeof(FileSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    fs = mmap(NULL, filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (fs == MAP_FAILED) {
         perror("mmap fs");
         exit(EXIT_FAILURE);
@@ -80,11 +80,7 @@ void init(const char *filename) {
 }
 
 
-
-
 void cleanup() {
-
-    size_t filesize = FILESYSTEM_SIZE * sizeof(FileSystemInfo);
 
     if (msync(fs, filesize, MS_SYNC) == -1) {
         perror("msync");
@@ -165,6 +161,49 @@ int createDir(const char* filename){
     return 0;
 }
 
+int createFile(const char* filename, const char* input){
+	int emptyBlock;
+    int lastBlock;
+
+    char* fullPathString = buildFullPath(filename);
+    if(fullPathString==NULL){
+        return -1;
+    }
+
+    if(exists(fullPathString)!=-1){
+        printf("Path already exists.\n");
+        free(fullPathString);
+        return -1;
+    }
+
+    emptyBlock = nextEmptyBlock();
+    if(emptyBlock==-1){
+        printf("File system is full.\n");
+        free(fullPathString);
+        return -1;
+    }
+
+    lastBlock = lastUsedBlock();
+    assert(fs[lastBlock].siguiente == -1);
+
+    fs[lastBlock].siguiente = emptyBlock;
+
+    fs[emptyBlock].hasData = insertData(input);
+    strcpy(fs[emptyBlock].path, fullPathString);
+    fs[emptyBlock].siguiente = -1;
+    fs[emptyBlock].creation_time = time(0);
+    fs[emptyBlock].last_access = time(0);
+    fs[emptyBlock].last_modification = time(0);
+    fs[emptyBlock].uid = getuid();
+    fs[emptyBlock].gid = getgid();
+    fs[emptyBlock].mode = S_IFREG | 0444;
+    fs[emptyBlock].nlink = 0;
+
+    free(fullPathString);
+    
+    return 0;
+}
+
 void borrar(const char* absolutePath){
     int actual = 0;
     int posterior = fs[0].siguiente;
@@ -182,7 +221,7 @@ void borrar(const char* absolutePath){
     fs[actual].siguiente = fs[posterior].siguiente;
     
     if(fs[posterior].hasData!=-1){
-        // Limpiar fichero asociado a fs[posterior].hasData
+        fs[posterior].hasData=borrarFile(fs[posterior].hasData);
     }
 
     memset(fs[posterior].path, 0, LONGEST_FILENAME);
@@ -196,7 +235,7 @@ void borrar(const char* absolutePath){
     fs[posterior].nlink = 0;
 }
 
-void removeDir(const char* filename){
+void deleteElement(const char* filename){
     char* fullPathString = buildFullPath(filename);
     
     if(fullPathString==NULL){
@@ -215,14 +254,17 @@ void removeDir(const char* filename){
         free(fullPathString);
         return;
     }
-
-    for (int i = 0; i < FILESYSTEM_SIZE; i++) {
-        if (strlen(fs[i].path) != 0 && isPrefix(fullPathString, fs[i].path)==0) {
-            printf("Se va a borrar: %s\n",fs[i].path);
-            borrar(fs[i].path);
-        }
-    }
-
+	
+	if(fs[saveExist].hasData==-1){
+		for (int i = 0; i < FILESYSTEM_SIZE; i++) {
+			if (strlen(fs[i].path) != 0 && isPrefix(fullPathString, fs[i].path)==0) {
+				printf("Se va a borrar: %s\n",fs[i].path);
+				borrar(fs[i].path);
+			}
+		}
+	}else{
+		borrar(fs[saveExist].path);
+	}
     free(fullPathString);
     printf("Directory and its content has been removed successfully.\n");
 }

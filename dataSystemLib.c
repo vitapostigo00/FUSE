@@ -32,12 +32,12 @@ void init_datasystem(const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    if (fstat(dataFd, &dataSt) == -1) {         //Se ha cambiado de dstat a fstat, comprobar esto
-        perror("dstat");
+    if (fstat(dataFd, &dataSt) == -1) {       
+        perror("fstat");
         exit(EXIT_FAILURE);
     }
 
-    dataFilesize = DATASYSTEM_SIZE * sizeof(DataSystemInfo) + DATASYSTEM_SIZE * BLOCKSIZE;
+    dataFilesize = DATASYSTEM_SIZE * sizeof(DataSystemInfo);
     if (dataSt.st_size != dataFilesize) {       //Mirar si es tb st.st_size o dataSt.dataSt_size
         if (ftruncate(dataFd, dataFilesize) == -1) {
             perror("ftruncate");
@@ -45,7 +45,7 @@ void init_datasystem(const char *filename) {
         }
     }
 
-    ds = mmap(NULL, DATASYSTEM_SIZE * sizeof(DataSystemInfo), PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
+    ds = mmap(NULL, dataFilesize, PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
     if (ds == MAP_FAILED) {
         perror("mmap ds");
         exit(EXIT_FAILURE);
@@ -86,7 +86,6 @@ int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite){
     int i;
     int j;
     int currentBlock = primBloque;
-    unsigned char byte = 0;
 
     for(i=0 ; i < blockNumToWrite; i++){
 
@@ -108,7 +107,7 @@ int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite){
 
         for(j=0; j < BLOCKSIZE; j++){
             fseek(archivo, i * BLOCKSIZE + j, SEEK_SET);
-            fread(&ds[currentBlock].data[j], sizeof(unsigned char), 1, archivo);
+            fread(&ds[currentBlock].dat[j], sizeof(unsigned char), 1, archivo);
         }
 
         if(i != blockNumToWrite - 1){
@@ -123,7 +122,7 @@ int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite){
 
 
 
-int insertData(char* filename){
+int insertData(const char* filename){
 
     FILE* archivo = fopen(filename, "rb");
     long tamano = 0;
@@ -163,29 +162,29 @@ int insertData(char* filename){
 
 }
 
-char* cat(int data) {
+char* cat(int dat) {
 
-    if(ds[data].firstDataBlock == -1){
+    if(ds[dat].firstDataBlock == -1){
         printf("Archivo no inicializado.\n");
-        return;
+        return NULL;
     }
 
-    if (ds[data].firstDataBlock != data) {
-        printf("No es el primer bloque, del archivo. Primer bloque: %i\n",ds[data].firstDataBlock);
-        return;
+    if (ds[dat].firstDataBlock != dat) {
+        printf("No es el primer bloque, del archivo. Primer bloque: %i\n",ds[dat].firstDataBlock);
+        return NULL;
     }
 
-    char* retorno = malloc(sizeof(char)* (ds[data].totalSize + 1));
+    char* retorno = malloc(sizeof(char)* (ds[dat].totalSize + 1));
     if (retorno == NULL) {
         printf("No se ha podido reservar espacio\n");
-        return;
+        return NULL;
     }
 
-    int currentBlock = data;
+    int currentBlock = dat;
     size_t offset = 0;
 
     while (currentBlock != -1) {
-        memcpy(retorno + offset, ds[currentBlock].data, ds[currentBlock].currentBlockSize);
+        memcpy(retorno + offset, ds[currentBlock].dat, ds[currentBlock].currentBlockSize);
         offset += ds[currentBlock].currentBlockSize;
         currentBlock = ds[currentBlock].siguiente;
     }
@@ -195,23 +194,23 @@ char* cat(int data) {
 }
 
 //Hay que pasarle por dónde empieza el archivo a escribir...
-void escribirArchivoBinario(const char* nombreArchivo, int data, size_t tamano) {
-    if (ds[data].firstDataBlock != data) {
+void escribirArchivoBinario(const char* nombreArchivo, int dat, size_t tamano) {
+    if (ds[dat].firstDataBlock != dat) {
         printf("No es el primer bloque...\n");
         return;
     }
 
-    char* contenido = malloc(ds[data].totalSize);
+    char* contenido = malloc(ds[dat].totalSize);
     if (contenido == NULL) {
         printf("No se ha podido reservar espacio\n");
         return;
     }
 
-    int currentBlock = data;
+    int currentBlock = dat;
     size_t offset = 0;
 
     while (currentBlock != -1) {
-        memcpy(contenido + offset, ds[currentBlock].data, ds[currentBlock].currentBlockSize);
+        memcpy(contenido + offset, ds[currentBlock].dat, ds[currentBlock].currentBlockSize);
         offset += ds[currentBlock].currentBlockSize;
         currentBlock = ds[currentBlock].siguiente;
     }
@@ -235,17 +234,17 @@ void escribirArchivoBinario(const char* nombreArchivo, int data, size_t tamano) 
 }
 
 
-void borrarFile(int data){
-    if(ds[data].firstDataBlock == -1){
+int borrarFile(int dat){
+    if(ds[dat].firstDataBlock == -1){
         printf("Archivo no inicializado.\n");
-        return;
+        return -1;
     }
 
-    if (ds[data].firstDataBlock != data) {
-        printf("No es el primer bloque, pruebe a borrar: %i\n",ds[data].firstDataBlock);
-        return;
+    if (ds[dat].firstDataBlock != dat) {
+        printf("No es el primer bloque, pruebe a borrar: %i\n",ds[dat].firstDataBlock);
+        return -1;
     }
-    int dataCopy = data;
+    int dataCopy = dat;
     int siguiente;
     do{
         ds[dataCopy].firstDataBlock = -1;
@@ -256,11 +255,10 @@ void borrarFile(int data){
         dataCopy = siguiente; 
     }
     while(ds[dataCopy].siguiente != -1);
-
-    printf("Se han borrado los datos!\n");
-
+	
+	return -1;
 }
 
-size_t sizeOfFile(int data){
-    return (size_t) (ds[data].totalSize+1);
+size_t sizeOfFile(int dat){
+    return (size_t) (ds[dat].totalSize+1);
 }

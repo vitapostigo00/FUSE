@@ -25,7 +25,7 @@ typedef struct info {
     uid_t uid;
     gid_t gid;
     mode_t mode;
-    nlink_t nlink;
+    int nlink;
     int hasData;
 } FileSystemInfo;
 
@@ -40,7 +40,7 @@ typedef struct data{
 	int firstDataBlock;
     int currentBlockSize;
 	unsigned long totalSize;
-	char data[BLOCKSIZE];
+	char dat[BLOCKSIZE];
 	int siguiente;
 } DataSystemInfo;
 
@@ -55,9 +55,10 @@ void init(const char *filename);
 void cleanup();
 void changeDirectory(const char* newDir);
 int createDir(const char* filename);
-void removeDir(const char* filename);
+void deleteElement(const char* filename);
 //int renameItem(FileSystemInfo *fs, const char* oldName, const char* newName);
 void borrar(const char* absolutePath);
+int createFile(const char* filename, const char*);
 
 
 // Separador entre las declaraciones de fileSystemLib y fileSystemUtils
@@ -74,14 +75,14 @@ int subdir_inmediato(const char* parent,const char* child);
 void ultimoElemento(const char *cadena, char *resultado);
 
 void initialize_datasystem();
-void init_datasystem(const char *filename);
+void init_datasystem(const char*);
 int primerElementoLibre();
 int hayEspacio(int numBloques);
 int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite);
-int insertData(char* filename);
-char* cat(int data);
-void escribirArchivoBinario(const char* nombreArchivo, int data, size_t tamano);
-void borrarFile(int data);
-size_t sizeOfFile(int data);
+int insertData(const char* filename);
+char* cat(int dat);
+void escribirArchivoBinario(const char* nombreArchivo, int dat, size_t tamano);
+int borrarFile(int dat);
+size_t sizeOfFile(int dat);
 
 #endif
