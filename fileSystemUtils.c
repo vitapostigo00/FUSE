@@ -166,10 +166,11 @@ void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_pre
     }
 }
 
-char ultimoElemento(const char *cadena) {
+void ultimoElemento(const char *cadena, char *resultado) {
     
     if (strcmp(cadena, "/") == 0) {
-        return NULL;
+        perror("Error: No se permite '/' como entrada.\n");
+        return;
     }
 
     int longitud = strlen(cadena);
@@ -179,15 +180,14 @@ char ultimoElemento(const char *cadena) {
         i--;
     }
     
-    char* resultado = malloc(sizeof(char) * (longitud-i));
     if (resultado == NULL) {
         perror("No se pudo asignar memoria");
-        return NULL;
+        return;
     }
     resultado[0]='\0';
     strncpy(resultado, cadena + i +1, longitud - i);
 
-    return resultado;
+    //return resultado;
 }
 
 int exists(const char* absoluteFilename){

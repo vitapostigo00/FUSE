@@ -69,7 +69,6 @@ static int fs_getattr(const char *path, struct stat *stbuf) {
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
     (void) offset;
 	(void) fi;
-    printf("fs_readdir: Path = %s\n", path);
 	int idx= exists(path);
 	
 	if(idx==-1){
@@ -85,16 +84,13 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
 		return -ENOMEM;
 	}
 	
-	printf("Pacojuan\n");
-	fflush(stdout);
-	
     if (strcmp(path, "/") == 0) {
         // Añadir todas las entradas
         for (int i = 1; i < FILESYSTEM_SIZE; i++) {
             if (subdir_inmediato(path, fs[i].path)==0) { // Revisa si la entrada es válida
-				printf("Nombre: %s\n",fs[i].path);
-				fflush(stdout);
-                if (filler(buf, fs[i].path), NULL, 0) != 0) {
+				char resultado[LONGEST_FILENAME];
+				ultimoElemento(fs[i].path, resultado);
+                if (filler(buf, resultado, NULL, 0) != 0) {
                     return -ENOMEM;
                 }
             }
@@ -102,9 +98,9 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
     } else if(fs[idx].hasData == -1){
         for (int i=0; i < FILESYSTEM_SIZE; i++){
             if (subdir_inmediato(path, fs[i].path)==0) { // Revisa si la entrada es válida
-				printf("Nombre2: %s",fs[i].path);
-				fflush(stdout);
-                if (filler(buf, ultimoElemento(fs[i].path), NULL, 0) != 0) {
+				char resultado[LONGEST_FILENAME];
+				ultimoElemento(fs[i].path, resultado);
+                if (filler(buf, resultado, NULL, 0) != 0) {
                     return -ENOMEM;
                 }
             }
@@ -112,6 +108,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
 	} 
     return 0;
 }
+
 
 // Función para crear un directorio
 static int fs_mkdir(const char *path, mode_t mode) {

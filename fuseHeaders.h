@@ -71,6 +71,7 @@ char* buildFullPath(const char* filename);
 int isPrefix(const char* prefix, const char* secondChain);
 void printFileSystemState(const char *filename);
 int subdir_inmediato(const char* parent,const char* child);
+void ultimoElemento(const char *cadena, char *resultado);
 
 void initialize_datasystem();
 void init_datasystem(const char *filename);
