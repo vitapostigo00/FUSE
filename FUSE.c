@@ -170,12 +170,12 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 	printf("fs_unlink: Path = %s\n", path);
 	int idx= exists(path);
 	if(idx==-1){
-		printf("fs_write: File not found.\n");
+		printf("fs_read: File not found.\n");
         return -ENOENT;	
 	}
 	
 	if(fs[idx].hasData==-1){
-		printf("fs_write: Not data.\n");
+		printf("fs_read: Not a file.\n");
         return -EISDIR;
 	}
 	
@@ -198,17 +198,55 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 }
 
 int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+
+    //Hay que mirar qué se hace con fi...
 	printf("fs_unlink: Path = %s\n", path);
-	int idx= exists(path);
+	int idx = exists(path);
 	if(idx==-1){
 		printf("fs_write: File not found.\n");
         return -ENOENT;	
 	}
     
     if(fs[idx].hasData==-1){
-		printf("fs_write: Not file.\n");
+		printf("fs_write: Not a file.\n");
         return -EISDIR;
 	}
+
+    //Llegados aqui, suponemos que tenemos un fichero con datos.
+    char* actualData = cat(fs[idx].hasData);
+
+    if(borrarFile(fs[idx].hasData)==-1){
+        free(actualData);
+        return -EIO;
+    }
+
+    fs[idx].last_access = time(0);          
+    fs[idx].last_modification = time(0);
+
+    if(offset>=strlen(actualData)){//Si el offset pasa del tamagno del string, se borra y se ponen solo los datos nuevos
+        free(actualData);
+        fs[idx].hasData = escribirDesdeBuffer(buf);
+        return strlen(buf);
+    }
+
+    char* newString = malloc(sizeof(char)*(size+1));
+
+    newString[0] = '\0';
+
+    strcpy(newString,actualData + offset);
+
+    free(actualData);
+
+    strcat(newString,buf);
+
+    newString[size] = '\0';
+
+    fs[idx].hasData = escribirDesdeBuffer(newString);
+
+    free(newString);
+
+    return size;
+
 }
 
 static int fs_open(const char *path, struct fuse_file_info *fi) {

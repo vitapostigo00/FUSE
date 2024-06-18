@@ -82,6 +82,68 @@ int hayEspacio(int numBloques){
     return 0;
 }
 
+int copiarStream(int primBloque,char* dataStream,long tamano,int blockNumToWrite){
+    int i;
+    int j;
+    int currentBlock = primBloque;
+
+    for(i=0 ; i < blockNumToWrite; i++){
+
+        ds[currentBlock].firstDataBlock = primBloque;
+        
+        if(i == blockNumToWrite-1){
+            ds[currentBlock].currentBlockSize = tamano%BLOCKSIZE;
+        }else{
+            ds[currentBlock].currentBlockSize = BLOCKSIZE;
+        }
+
+        ds[currentBlock].totalSize = tamano; 
+
+        if(currentBlock==-1){
+            printf("Error en la gestion, el archivo no ha sido guardado\n");
+            borrarFile(primBloque);
+            return -1;
+        }
+
+        for(j=0; j < BLOCKSIZE; j++){
+            ds[currentBlock].dat[j] = dataStream[i * BLOCKSIZE + j];
+        }
+
+        if(i != blockNumToWrite - 1){
+            ds[currentBlock].siguiente = primerElementoLibre();
+        }
+
+        currentBlock = primerElementoLibre();
+    }
+
+    return 0;
+}
+
+
+int escribirDesdeBuffer(const char* dataStream){
+    long tamano = strlen(dataStream);
+    int blockNumToWrite = tamano/(BLOCKSIZE)+1;
+    if(!hayEspacio((tamano/(BLOCKSIZE)+1))){
+        printf("No hay espacio.\n");
+        return -1;
+    }
+    int primBloque = primerElementoLibre();
+
+    if(primBloque==-1){
+        printf("Filesystem is full");
+        return -1;
+    }
+
+    int copiado = copiarStream(primBloque,dataStream,tamano,blockNumToWrite);
+
+    if(copiado == 0){
+        return primBloque;
+    }
+
+    return -1;
+
+}
+
 int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite){
     int i;
     int j;
@@ -119,8 +181,6 @@ int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite){
 
     return 0;
 }
-
-
 
 int insertData(const char* filename){
 
@@ -256,7 +316,7 @@ int borrarFile(int dat){
     }
     while(ds[dataCopy].siguiente != -1);
 	
-	return -1;
+	return 0;
 }
 
 size_t sizeOfFile(int dat){
