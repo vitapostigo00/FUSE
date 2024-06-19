@@ -1,6 +1,7 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
+#include <sys/statfs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +23,8 @@ static int fs_open(const char *path, struct fuse_file_info *fi);
 static int fs_release(const char *path, struct fuse_file_info *fi);
 static int fs_getxattr(const char *path, const char *name, char *value, size_t size);
 int fs_truncate(const char *path, off_t newsize);
+static int fs_rename(const char *from, const char *to);
+static int fs_statfs(const char *path, struct statvfs *stbuf);
 
 
 // Estructura de operaciones FUSE
@@ -39,10 +42,36 @@ static struct fuse_operations fs_oper = {
     .release = fs_release,
     .getxattr= fs_getxattr,
     .truncate= fs_truncate,
+    .rename  = fs_rename,
+    //.statfs  = fs_statfs,
 };
 
 static const char *fileSystemData = "filesystem.bin";
 
+
+//~ static int fs_statfs(const char *path, struct statvfs *stbuf){
+	//~ memset(stbuf, 0, sizeof(struct statvfs));
+	//~ stbuf->f_bsize = BLOCKSIZE;  // Tamaño de bloque
+    //~ stbuf->f_frsize = BLOCKSIZE; // Tamaño de fragmento
+    //~ stbuf->f_blocks = DATASYSTEM_SIZE; // Total de bloques
+    //~ stbuf->f_bfree = bloqueslibres();  // Bloques libres
+    //~ stbuf->f_bavail =bloqueslibres(); // Bloques disponibles para usuarios no privilegiados
+    //~ stbuf->f_files = FILESYSTEM_SIZE;   // Total de inodos
+    //~ stbuf->f_ffree = nodoslibres();    // Inodos libres
+    //~ stbuf->f_favail = nodoslibres();   // Inodos disponibles para usuarios no privilegiados
+    //~ stbuf->f_fsid = 33;    // Identificador del sistema de archivos
+    //~ stbuf->f_namemax = LONGEST_FILENAME;    // Máximo número de caracteres en un nombre de archivo
+
+    //~ return 0;
+//~ }
+
+//~ static int fs_statfs(const char *path, struct statvfs* stbuf) {
+    //~ stbuf->f_bsize  = 4096; // block size
+    //~ stbuf->f_frsize = 4096; // fragment size
+    //~ stbuf->f_blocks = 1024; // blocks
+
+    //~ return 0; // assume no errors occurred, just return 0
+//~ } 
 
 // Función para obtener atributos de un archivo o directorio
 static int fs_getattr(const char *path, struct stat *stbuf) {
@@ -174,6 +203,9 @@ int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
 
 static int fs_rename(const char *from, const char *to) {
     //Debe existir el elemento a mover
+    printf("From: %s\n", from);
+    printf("To: %s\n", to);
+    
     char* absoluteFrom = buildFullPath(from);
     int idxFrom = exists(absoluteFrom);
     if(idxFrom == -1){
@@ -207,6 +239,7 @@ static int fs_rename(const char *from, const char *to) {
         }
         strcpy(fs[idxFrom].path,newDir);
         if(isDir==-1){
+			int i;
             for(i=1; i<FILESYSTEM_SIZE;i++){
                 reemplazar_prefijo(fs[i].path, absoluteFrom, newDir);
             }
@@ -255,6 +288,7 @@ static int fs_rename(const char *from, const char *to) {
     strcpy(fs[idxFrom].path,newDir);
 
     if(isDir==-1){
+		int i;
         for(i=1; i<FILESYSTEM_SIZE;i++){
             reemplazar_prefijo(fs[i].path, absoluteFrom, newDir);
         }
@@ -264,6 +298,7 @@ static int fs_rename(const char *from, const char *to) {
     free(absoluteTo);
     free(newDir);
     free(newFromCopia);
+    return 0;
 }
 
 static int fs_unlink(const char *path){

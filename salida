@@ -10,6 +10,26 @@ Creation Time: 2024-06-19 01:32:49
 
 Index: 2
 Path: /albacete
-Siguiente: -1
+Siguiente: 3
 Creation Time: 2024-06-19 01:35:29
+
+Index: 3
+Path: /dir1
+Siguiente: 4
+Creation Time: 2024-06-19 02:33:53
+
+Index: 4
+Path: /dir2/dir1/dir2/dir1/dir2/dir1/dir2
+Siguiente: 5
+Creation Time: 2024-06-19 02:33:55
+
+Index: 5
+Path: /dir1/cambiame/cambiame
+Siguiente: 6
+Creation Time: 2024-06-19 02:34:11
+
+Index: 6
+Path: /dir2/dir1/dir2/dir1/dir2
+Siguiente: -1
+Creation Time: 2024-06-19 02:38:36
 

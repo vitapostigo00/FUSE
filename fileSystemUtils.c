@@ -161,6 +161,29 @@ int isPrefix(const char* prefix, const char* secondChain){
     return 0;
 }
 
+int bloqueslibres(){
+	int i;
+	int contador=0;
+	for(i=0; i<FILESYSTEM_SIZE; i++){
+		if(ds[i].firstDataBlock==-1){
+			contador++;
+		}
+	}
+	return contador;
+}
+
+int nodoslibres(){
+	int i;
+	int contador=0;
+	for(i=0; i<FILESYSTEM_SIZE; i++){
+		if(fs[i].siguiente==-1){
+			contador++;
+		}
+	}
+	contador--;
+	return contador;
+}
+
 // Función para reemplazar el prefijo de `cadena` con `nuevo_prefijo`
 void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_prefijo) {
     // Verificar si `prefijo` es realmente un prefijo de `cadena`
@@ -178,7 +201,7 @@ void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_pre
     }
 }
 
-void ultimoElemento(const char *cadena, const char *resultado) {
+void ultimoElemento(const char *cadena, char *resultado) {
     
     if (strcmp(cadena, "/") == 0) {
         perror("Error: No se permite '/' como entrada.\n");
