@@ -193,10 +193,6 @@ void ultimoElemento(const char *cadena, const char *resultado) {
     }
     
     strncpy(resultado, cadena + i +1, longitud - i);
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 }
 
 int exists(const char* absoluteFilename){
