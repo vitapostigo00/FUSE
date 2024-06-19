@@ -82,7 +82,7 @@ int hayEspacio(int numBloques){
     return 0;
 }
 
-int copiarSinCheck(int primBloque, char* contenido, int size){
+int copiarSinCheck(int primBloque,const char* contenido, int size){
     int iterador = primBloque;
 
     if(ds[primBloque].firstDataBlock!=primBloque){
@@ -170,7 +170,6 @@ int escribirDesdeBuffer(const char* dataStream, unsigned long tamano){
     if(tamano==0){
 		return createEmpty();
 	}
-    
     printf("tamanodesdebuffer: %lu\n", tamano);
     int blockNumToWrite = tamano/(BLOCKSIZE)+1;
     
@@ -179,14 +178,11 @@ int escribirDesdeBuffer(const char* dataStream, unsigned long tamano){
         return -1;
     }
     int primBloque = primerElementoLibre();
-
     if(primBloque==-1){
         printf("Filesystem is full");
         return -1;
     }
-
     int copiado = copiarStream(primBloque,dataStream,tamano,blockNumToWrite);
-
     if(copiado == 0){
         return primBloque;
     }

@@ -1,0 +1,25 @@
+Index: 0
+Path: /
+Siguiente: 1
+Creation Time: 2024-06-20 00:38:04
+
+Index: 1
+Path: /dir1
+Siguiente: 2
+Creation Time: 2024-06-20 00:42:30
+
+Index: 2
+Path: /dir1/dir2
+Siguiente: 3
+Creation Time: 2024-06-20 00:43:45
+
+Index: 3
+Path: /dir1/dir3/dir2
+Siguiente: 4
+Creation Time: 2024-06-20 01:12:34
+
+Index: 4
+Path: /dir1/dir3
+Siguiente: -1
+Creation Time: 2024-06-20 01:12:37
+

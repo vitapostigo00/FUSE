@@ -227,7 +227,7 @@ static int fs_rename(const char* from, const char* to) {
         int futureSize = 0;
         int actualizarHijos = 1;
         while(actualizarHijos && i != -1){
-            if((from,fs[i].path)==0){
+            if(isPrefix(from,fs[i].path)==0){
                 futureSize = strlen(fs[i].path)-strlen(from)+strlen(to);
                 if(futureSize>=LONGEST_FILENAME){
                     actualizarHijos = 0;
@@ -237,6 +237,8 @@ static int fs_rename(const char* from, const char* to) {
         }
         //Si todos los hijos entran en el tamano apropiado, los actualizamos cuando sean prefijo.
         if(actualizarHijos){
+			actualizar_padre(1,to);
+			actualizar_padre(0,from);
             i = fs[0].siguiente;
             while(i != -1){
                 reemplazar_prefijo(fs[i].path,from,to);
@@ -251,6 +253,8 @@ static int fs_rename(const char* from, const char* to) {
     //Si no, es porque es un fichero.
     else{
         strcpy(fs[idx].path,to);
+        actualizar_padre(1,to);
+        actualizar_padre(0,from);
         return 0;
     }
     

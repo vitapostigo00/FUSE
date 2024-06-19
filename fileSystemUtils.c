@@ -69,8 +69,17 @@ int lastUsedBlock(){
     return -1;
 }
 
-void actualizar_padre(int crear){
-	char* padre= buildFullPath(".");
+void actualizar_padre(int crear, const char* newpath){
+	char* padre;
+	if(strcmp(newpath,"")==0){
+		padre= buildFullPath(".");
+	}else{
+		padre=padrefrompath(newpath);
+		if(padre==NULL){
+			return;
+		} 
+	}
+	
 	int idx=exists(padre);
 	if(crear){
 		fs[idx].nlink++;
@@ -78,7 +87,27 @@ void actualizar_padre(int crear){
 		fs[idx].nlink--;
 	}
 	free(padre);
-	
+}
+
+char* padrefrompath(const char* path){
+	if (strcmp(path, "/") == 0) {
+         printf("Ya estás en / ...\n");
+         return NULL;
+    }
+
+    int i = strlen(path) - 1;
+    while (i >= 0 && path[i] != '/') {
+		i--;
+    }
+        
+    char* retorno = malloc(sizeof(char) * (i + 1));
+    if (retorno == NULL) {
+       printf("Error al reservar memoria.\n");
+       return NULL;
+    }
+    strncpy(retorno, path, i);
+    retorno[i] = '\0';
+    return retorno;
 }
 
 char* buildFullPath(const char* filename) {

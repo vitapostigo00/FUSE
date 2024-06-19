@@ -14,7 +14,7 @@
 #define FILESYSTEM_SIZE 1024 // Número de entradas en el sistema de archivos
 
 #define DATASYSTEM_SIZE 65536  // Número de entradas en el sistema de datos
-#define BLOCKSIZE 4096       // Numero de bytes por bloque
+#define BLOCKSIZE 1024     // Numero de bytes por bloque
 
 typedef struct info {
     char path[LONGEST_FILENAME];
@@ -72,10 +72,11 @@ int isPrefix(const char*, const char*);
 void printFileSystemState(const char *);
 int subdir_inmediato(const char*,const char*);
 void ultimoElemento(const char*, char*);
-void actualizar_padre(int);
+void actualizar_padre(int, const char*);
 void reemplazar_prefijo(char*, const char*, const char*);
 int nodoslibres();
 int bloqueslibres();
+char* padrefrompath(const char* path);
 // Declaraciones de funciones de fileSystemUtils.c
 
 
@@ -84,7 +85,7 @@ void initialize_datasystem();
 void init_datasystem(const char*);
 int primerElementoLibre();
 int hayEspacio(int);
-int copiarSinCheck(int, char*, int);
+int copiarSinCheck(int,const char*, int);
 int copiarFichero(int, FILE*, long , int);
 int insertData(const char*);
 char* cat(int);

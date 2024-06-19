@@ -156,7 +156,7 @@ int createDir(const char* filename){
     fs[emptyBlock].mode = S_IFDIR | 0755;
     fs[emptyBlock].nlink = 0;
 
-	actualizar_padre(1);
+	actualizar_padre(1,"");
     free(fullPathString);
     
     return 0;
@@ -200,7 +200,7 @@ int createFile(const char* filename, const char* input, mode_t mode){
     fs[emptyBlock].mode = mode;
     fs[emptyBlock].nlink = 0;
 
-	actualizar_padre(1);
+	actualizar_padre(1,"");
     free(fullPathString);
     
     return 0;
@@ -268,7 +268,7 @@ void deleteElement(const char* filename){
 		borrar(fs[saveExist].path);
 	}
 	
-	actualizar_padre(0);
+	actualizar_padre(0,"");
     free(fullPathString);
     printf("Directory and its content has been removed successfully.\n");
 }
