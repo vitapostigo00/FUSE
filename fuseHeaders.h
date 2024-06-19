@@ -84,6 +84,7 @@ void initialize_datasystem();
 void init_datasystem(const char*);
 int primerElementoLibre();
 int hayEspacio(int);
+int copiarSinCheck(int, char*, int);
 int copiarFichero(int, FILE*, long , int);
 int insertData(const char*);
 char* cat(int);

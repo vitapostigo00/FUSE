@@ -350,7 +350,7 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 }
 
 int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    //Hay que mirar qué se hace con fi...
+    //Para dd solo aceptamos bloques de 4096
 	printf("fs_write: Path = %s\n", path);
 	
 	char* fullpath = buildFullPath(path);
@@ -365,8 +365,14 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
 		printf("fs_write: Not a file.\n");
         return -EISDIR;
 	}
-	
+    
+	//Vienen varios bloques (ej dd, suponemos que la entrada está bien y la anexionamos:)
 	if(offset != 0){
+        if(copiarSinCheck(fs[idx].hasData,buf,size)==0){
+            return size;
+        }
+        return 0;
+        /*
 		char *existingContent = cat(fs[idx].hasData);
         size_t existingSize = strlen(existingContent);
 
@@ -393,7 +399,7 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
         fs[idx].hasData = escribirDesdeBuffer(newContent, existingSize + size);
         free(newContent);
 
-        return size;
+        return size;*/
 	}
 	
     if(borrarFile(fs[idx].hasData)==-1){

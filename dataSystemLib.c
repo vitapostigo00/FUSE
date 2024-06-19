@@ -82,6 +82,37 @@ int hayEspacio(int numBloques){
     return 0;
 }
 
+int copiarSinCheck(int primBloque, char* contenido, int size){
+    int iterador = primBloque;
+
+    if(ds[primBloque].firstDataBlock!=primBloque){
+        printf("Error, datos inconsistentes.\n");
+        return -1;
+    }
+    int bloqueAEscribir = primerElementoLibre();
+    if(bloqueAEscribir==-1){
+        printf("FileSystem Is full.\n");
+        borrarFile(primBloque);
+        return -1;
+    }
+
+    int tamTotal = ds[iterador].totalSize+size;
+    while(ds[iterador].siguiente!=-1){
+        ds[iterador].totalSize=tamTotal;
+        iterador = ds[iterador].siguiente;
+    }
+    //Anexionamos el siguiente bloque
+    ds[iterador].siguiente = bloqueAEscribir;
+
+    //Declaramos los datos del bloque
+    ds[bloqueAEscribir].firstDataBlock = primBloque;
+    ds[bloqueAEscribir].currentBlockSize = size;
+    ds[bloqueAEscribir].totalSize = tamTotal;
+    memcpy(ds[bloqueAEscribir].dat,contenido,size);
+    ds[bloqueAEscribir].siguiente = -1;
+    return 0;
+}
+
 int copiarStream(int primBloque,const char* dataStream, unsigned long tamano,int blockNumToWrite){
     int i;
     int j;
