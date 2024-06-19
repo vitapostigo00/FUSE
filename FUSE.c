@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
     }
 
 	init(argv[argc-2]);
-    init_datasystem("dataSystem.bin");
+    init_datasystem("filesystem.bin");
     // Ajustar los argumentos para FUSE
     argv[argc-2] = argv[argc-1]; // Mueve el punto de montaje al lugar del fichero
     argv[argc-1] = NULL;         // Elimina el último argumento para ajustar a FUSE

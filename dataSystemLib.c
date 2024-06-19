@@ -45,7 +45,7 @@ void init_datasystem(const char *filename) {
         }
     }
 
-    ds = mmap(NULL, dataFilesize, PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
+    ds = mmap(NULL, dataFilesize, PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, filesize);
     if (ds == MAP_FAILED) {
         perror("mmap ds");
         exit(EXIT_FAILURE);

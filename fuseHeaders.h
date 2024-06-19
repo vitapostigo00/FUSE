@@ -11,10 +11,11 @@
 #include <string.h>
 
 #define LONGEST_FILENAME 255  // Tamaño de path más largo permitido
-#define FILESYSTEM_SIZE 1024 // Número de entradas en el sistema de archivos
+#define FILESYSTEM_SIZE 1024  // Número de entradas en el sistema de archivos
 
-#define DATASYSTEM_SIZE 1024 // Número de entradas en el sistema de datos
-#define BLOCKSIZE 4       // Numero de bytes por bloque
+//Datos predeterminados en una FAT16 para 1/2 GB
+#define DATASYSTEM_SIZE 65536 // Número de entradas en el sistema de datos
+#define BLOCKSIZE       32768 // Numero de bytes por bloque
 
 typedef struct info {
     char path[LONGEST_FILENAME];
