@@ -58,7 +58,7 @@ int createDir(const char*);
 void deleteElement(const char*);
 //int renameItem(FileSystemInfo *fs, const char* oldName, const char* newName);
 void borrar(const char*);
-int createFile(const char*, const char*);
+int createFile(const char*, const char*, mode_t);
 // Declaraciones de funciones de fileSystemLib.c
 
 

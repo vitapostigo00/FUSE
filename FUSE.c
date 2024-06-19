@@ -202,7 +202,7 @@ static void fs_destroy(void *userdata) {
 }
 
 int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    int result = createFile(path, "");
+    int result = createFile(path, "", mode);
     if (result == -1) {
         printf("fs_create: Failed to create file.\n");
         return -EPERM;

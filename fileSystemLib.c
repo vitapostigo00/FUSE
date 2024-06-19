@@ -162,7 +162,7 @@ int createDir(const char* filename){
     return 0;
 }
 
-int createFile(const char* filename, const char* input){
+int createFile(const char* filename, const char* input, mode_t mode){
 	int emptyBlock;
     int lastBlock;
 
@@ -197,7 +197,7 @@ int createFile(const char* filename, const char* input){
     fs[emptyBlock].last_modification = time(0);
     fs[emptyBlock].uid = getuid();
     fs[emptyBlock].gid = getgid();
-    fs[emptyBlock].mode = S_IFREG | 0666;
+    fs[emptyBlock].mode = mode;
     fs[emptyBlock].nlink = 0;
 
 	actualizar_padre(1);
