@@ -6,7 +6,7 @@
 int main(){
 	init("filesystem.bin");
 	init_datasystem("dataSystem.bin");
-	//createFile("pepe", "/home/master/cosas/paco");
-	int idx=exists("pepe");
+	createFile("/alberto", "/home/master/cosas/paco");
+	int idx=exists("/alberto");
 	printf("%s\n", cat(fs[idx].hasData));
 }

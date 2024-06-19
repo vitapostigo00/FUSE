@@ -21,6 +21,7 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
 static int fs_open(const char *path, struct fuse_file_info *fi);
 static int fs_release(const char *path, struct fuse_file_info *fi);
 static int fs_getxattr(const char *path, const char *name, char *value, size_t size);
+int fs_truncate(const char *path, off_t newsize);
 
 
 // Estructura de operaciones FUSE
@@ -36,7 +37,8 @@ static struct fuse_operations fs_oper = {
     .write   = fs_write,
     .open    = fs_open,
     .release = fs_release,
-    .getxattr= fs_getxattr;
+    .getxattr= fs_getxattr,
+    .truncate= fs_truncate,
 };
 
 static const char *fileSystemData = "filesystem.bin";
@@ -46,7 +48,9 @@ static const char *fileSystemData = "filesystem.bin";
 static int fs_getattr(const char *path, struct stat *stbuf) {
     printf("fs_getattr: Path = %s\n", path);
     memset(stbuf, 0, sizeof(struct stat));
-	int idx= exists(path);
+	char* fullpath = buildFullPath(path);
+	int idx= exists(fullpath);
+	free(fullpath);
 	printf("Index: %i\n", idx);
 	
     if (strcmp(path, "/") == 0) {
@@ -55,8 +59,10 @@ static int fs_getattr(const char *path, struct stat *stbuf) {
         stbuf->st_atime = fs[0].last_access;
         stbuf->st_mtime = fs[0].last_modification;
         stbuf->st_ctime = fs[0].creation_time;
-		stbuf->st_uid= fs[0].uid;
-		stbuf->st_gid= fs[0].gid;
+		stbuf->st_uid	= fs[0].uid;
+		stbuf->st_gid	= fs[0].gid;
+		stbuf->st_size  = sizeof(FileSystemInfo);
+		stbuf->st_blocks= 0;
     } else if((idx != -1) && (fs[idx].hasData == -1)){
 		stbuf->st_mode = fs[idx].mode;
         stbuf->st_nlink = fs[idx].nlink + 2;
@@ -65,14 +71,18 @@ static int fs_getattr(const char *path, struct stat *stbuf) {
         stbuf->st_ctime = fs[idx].creation_time;
 		stbuf->st_uid= fs[idx].uid;
 		stbuf->st_gid= fs[idx].gid;
+		stbuf->st_size  = sizeof(FileSystemInfo);
+		stbuf->st_blocks= 0;
 	} else if ((idx != -1) && (fs[idx].hasData != -1)){
 		stbuf->st_mode = fs[idx].mode;
         stbuf->st_nlink = 1;
         stbuf->st_atime = fs[idx].last_access;
         stbuf->st_mtime = fs[idx].last_modification;
         stbuf->st_ctime = fs[idx].creation_time;
-		stbuf->st_uid= fs[idx].uid;
-		stbuf->st_gid= fs[idx].gid;
+		stbuf->st_uid   = fs[idx].uid;
+		stbuf->st_gid   = fs[idx].gid;
+		stbuf->st_size  = ds[fs[idx].hasData].totalSize;
+		stbuf->st_blocks= ((ds[fs[idx].hasData].totalSize)/BLOCKSIZE) + 1;
 	} else {
 		return -ENOENT;
 	} 
@@ -84,7 +94,9 @@ static int fs_getattr(const char *path, struct stat *stbuf) {
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
     (void) offset;
 	(void) fi;
-	int idx= exists(path);
+	char* fullpath = buildFullPath(path);
+	int idx= exists(fullpath);
+	free(fullpath);
 	
 	if(idx==-1){
 		printf("No se encuentra");
@@ -152,7 +164,7 @@ static void fs_destroy(void *userdata) {
 }
 
 int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    int result = createFile(path);
+    int result = createFile(path, "");
     if (result == -1) {
         printf("fs_create: Failed to create file.\n");
         return -EPERM;
@@ -167,8 +179,10 @@ static int fs_unlink(const char *path){
 }
 
 int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	printf("fs_unlink: Path = %s\n", path);
-	int idx= exists(path);
+	printf("fs_read: Path = %s\n", path);
+	char* fullpath = buildFullPath(path);
+	int idx= exists(fullpath);
+	free(fullpath);
 	if(idx==-1){
 		printf("fs_read: File not found.\n");
         return -ENOENT;	
@@ -188,7 +202,7 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 			size = tam - offset;
 		}
 		char* temp= cat(fs[idx].hasData);
-		memcpy(buf,temp + offset, size);
+		memcpy(buf,temp, strlen(temp));
 		free(temp);
 	} else{
 		size=0;
@@ -198,10 +212,12 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 }
 
 int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-
     //Hay que mirar qué se hace con fi...
-	printf("fs_unlink: Path = %s\n", path);
-	int idx = exists(path);
+	printf("fs_write: Path = %s\n", path);
+	
+	char* fullpath = buildFullPath(path);
+	int idx= exists(fullpath);
+	free(fullpath);
 	if(idx==-1){
 		printf("fs_write: File not found.\n");
         return -ENOENT;	
@@ -212,46 +228,40 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
         return -EISDIR;
 	}
 
-    //Llegados aqui, suponemos que tenemos un fichero con datos.
-    char* actualData = cat(fs[idx].hasData);
-
     if(borrarFile(fs[idx].hasData)==-1){
-        free(actualData);
         return -EIO;
     }
 
     fs[idx].last_access = time(0);          
     fs[idx].last_modification = time(0);
-
-    if(offset>=strlen(actualData)){//Si el offset pasa del tamagno del string, se borra y se ponen solo los datos nuevos
-        free(actualData);
-        fs[idx].hasData = escribirDesdeBuffer(buf);
-        return strlen(buf);
-    }
-
-    char* newString = malloc(sizeof(char)*(size+1));
-
-    newString[0] = '\0';
-
-    strcpy(newString,actualData + offset);
-
-    free(actualData);
-
-    strcat(newString,buf);
-
-    newString[size] = '\0';
-
-    fs[idx].hasData = escribirDesdeBuffer(newString);
-
-    free(newString);
-
+	
+	char* newbuf=malloc(sizeof (char) * (size+1));
+	memcpy(newbuf,buf,size);
+	newbuf[size]='\0';
+    fs[idx].hasData = escribirDesdeBuffer(newbuf);
+	free(newbuf);
+	
     return size;
+}
 
+//Implementada esta función para controlar algunos operadores, sin embargo, la lógica está ya implementada en el write
+int fs_truncate(const char *path, off_t newsize){
+	char* fullpath= buildFullPath(path);
+	int idx= exists(fullpath);
+	if(idx == -1){
+		return -ENOENT;
+	}
+	
+	//ds[fs[idx].hasData].totalSize=newsize;
+	free(fullpath);
+	return 0;
 }
 
 static int fs_open(const char *path, struct fuse_file_info *fi) {
-	int idx= exists(path);
-	if(idx!=-1){
+	char* fullpath = buildFullPath(path);
+	int idx= exists(fullpath);
+	free(fullpath);
+	if(idx==-1){
 		printf("fs_open: File not found.\n");
         return -ENOENT;	
 	}
@@ -261,12 +271,14 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
         return -EISDIR;
 	}
 	
-	int desc;
-    desc = open(path, fi->flags);
-    if (desc == -1)
-        return -errno;  
-
-    fi->fh = desc;  // Guardamos file descriptor en fi
+	if (fi->flags & O_TRUNC) {
+        if (truncate(path, 0) == -1) {
+            close(fd);
+            return -errno;
+        }
+    }
+		
+    fi->fh = idx;  // Guardamos file descriptor en fi
     return 0;
 }
 

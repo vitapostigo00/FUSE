@@ -69,6 +69,18 @@ int lastUsedBlock(){
     return -1;
 }
 
+void actualizar_padre(int crear){
+	char* padre= buildFullPath(".");
+	int idx=exists(padre);
+	if(crear){
+		fs[idx].nlink++;
+	}else{
+		fs[idx].nlink--;
+	}
+	free(padre);
+	
+}
+
 char* buildFullPath(const char* filename) {
     if (strcmp(filename, ".") == 0) {
         char* retorno = malloc(strlen(currentDir->path) + 1);
@@ -166,7 +178,7 @@ void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_pre
     }
 }
 
-void ultimoElemento(const char *cadena, char *resultado) {
+void ultimoElemento(const char *cadena, const char *resultado) {
     
     if (strcmp(cadena, "/") == 0) {
         perror("Error: No se permite '/' como entrada.\n");
@@ -186,8 +198,6 @@ void ultimoElemento(const char *cadena, char *resultado) {
     }
     resultado[0]='\0';
     strncpy(resultado, cadena + i +1, longitud - i);
-
-    //return resultado;
 }
 
 int exists(const char* absoluteFilename){

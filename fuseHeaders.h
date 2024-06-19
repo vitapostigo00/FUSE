@@ -51,38 +51,44 @@ extern struct stat dataSt;
 
 // Declaraciones de funciones de fileSystemLib.c
 void initialize_filesystem();
-void init(const char *filename);
+void init(const char *);
 void cleanup();
-void changeDirectory(const char* newDir);
-int createDir(const char* filename);
-void deleteElement(const char* filename);
+void changeDirectory(const char*);
+int createDir(const char*);
+void deleteElement(const char*);
 //int renameItem(FileSystemInfo *fs, const char* oldName, const char* newName);
-void borrar(const char* absolutePath);
-int createFile(const char* filename, const char*);
+void borrar(const char*);
+int createFile(const char*, const char*);
+// Declaraciones de funciones de fileSystemLib.c
 
 
-// Separador entre las declaraciones de fileSystemLib y fileSystemUtils
 // Declaraciones de funciones de fileSystemUtils.c
-int exists(const char* absoluteFilename);
-void print_time(time_t raw_time);
+int exists(const char*);
+void print_time(time_t);
 int nextEmptyBlock();
 int lastUsedBlock();
-char* buildFullPath(const char* filename);
-//char* buildFullPathDir(const char* filename);
-int isPrefix(const char* prefix, const char* secondChain);
-void printFileSystemState(const char *filename);
-int subdir_inmediato(const char* parent,const char* child);
-void ultimoElemento(const char *cadena, char *resultado);
+char* buildFullPath(const char*);
+int isPrefix(const char*, const char*);
+void printFileSystemState(const char *);
+int subdir_inmediato(const char*,const char*);
+void ultimoElemento(const char*, const char*);
+void actualizar_padre(int);
+// Declaraciones de funciones de fileSystemUtils.c
 
+
+// Declaraciones de funciones de dataSystemLib.c
 void initialize_datasystem();
 void init_datasystem(const char*);
 int primerElementoLibre();
-int hayEspacio(int numBloques);
-int copiarFichero(int primBloque,FILE* archivo,long tamano,int blockNumToWrite);
-int insertData(const char* filename);
-char* cat(int dat);
-void escribirArchivoBinario(const char* nombreArchivo, int dat, size_t tamano);
-int borrarFile(int dat);
-size_t sizeOfFile(int dat);
+int hayEspacio(int);
+int copiarFichero(int, FILE*, long , int);
+int insertData(const char*);
+char* cat(int);
+void escribirArchivoBinario(const char*, int, size_t);
+int borrarFile(int);
+size_t sizeOfFile(int);
+int escribirDesdeBuffer(const char*);
+int copiarStream(int , const char*, long , int);
+// Declaraciones de funciones de dataSystemLib.c
 
 #endif

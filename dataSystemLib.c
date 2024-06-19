@@ -82,7 +82,7 @@ int hayEspacio(int numBloques){
     return 0;
 }
 
-int copiarStream(int primBloque,char* dataStream,long tamano,int blockNumToWrite){
+int copiarStream(int primBloque,const char* dataStream,long tamano,int blockNumToWrite){
     int i;
     int j;
     int currentBlock = primBloque;

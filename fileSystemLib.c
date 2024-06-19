@@ -156,6 +156,7 @@ int createDir(const char* filename){
     fs[emptyBlock].mode = S_IFDIR | 0755;
     fs[emptyBlock].nlink = 0;
 
+	actualizar_padre(1);
     free(fullPathString);
     
     return 0;
@@ -188,7 +189,7 @@ int createFile(const char* filename, const char* input){
 
     fs[lastBlock].siguiente = emptyBlock;
 
-    fs[emptyBlock].hasData = insertData(input);
+    fs[emptyBlock].hasData = escribirDesdeBuffer(input);
     strcpy(fs[emptyBlock].path, fullPathString);
     fs[emptyBlock].siguiente = -1;
     fs[emptyBlock].creation_time = time(0);
@@ -196,9 +197,10 @@ int createFile(const char* filename, const char* input){
     fs[emptyBlock].last_modification = time(0);
     fs[emptyBlock].uid = getuid();
     fs[emptyBlock].gid = getgid();
-    fs[emptyBlock].mode = S_IFREG | 0444;
+    fs[emptyBlock].mode = S_IFREG | 0666;
     fs[emptyBlock].nlink = 0;
 
+	actualizar_padre(1);
     free(fullPathString);
     
     return 0;
@@ -265,6 +267,8 @@ void deleteElement(const char* filename){
 	}else{
 		borrar(fs[saveExist].path);
 	}
+	
+	actualizar_padre(0);
     free(fullPathString);
     printf("Directory and its content has been removed successfully.\n");
 }
