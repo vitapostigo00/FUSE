@@ -192,12 +192,11 @@ void ultimoElemento(const char *cadena, const char *resultado) {
         i--;
     }
     
-    if (resultado == NULL) {
-        perror("No se pudo asignar memoria");
-        return;
-    }
-    resultado[0]='\0';
     strncpy(resultado, cadena + i +1, longitud - i);
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 }
 
 int exists(const char* absoluteFilename){

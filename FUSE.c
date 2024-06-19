@@ -172,6 +172,100 @@ int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     return 0;
 }
 
+static int fs_rename(const char *from, const char *to) {
+    //Debe existir el elemento a mover
+    char* absoluteFrom = buildFullPath(from);
+    int idxFrom = exists(absoluteFrom);
+    if(idxFrom == -1){
+        free(absoluteFrom);
+        return -ENOENT;
+    }
+    int isDir = fs[idxFrom].hasData;
+
+    //Primero miramos si es mover a otro directorio o simplemente renombrar:
+    char* absoluteTo = buildFullPath(to);
+    int idxTo = exists(absoluteTo);
+    if(idxTo == -1){
+        //Rename
+        int tamano = (strlen(to)+strlen(from)+1);
+        if(tamano >= LONGEST_FILENAME){
+            printf("Path demasiado largo.");
+            free(absoluteFrom);
+            free(absoluteTo);
+            return -ENAMETOOLONG;
+        }
+        char* newDir = malloc(sizeof(char)*tamano);
+        strcpy(newDir,from);
+        strcat(newDir,to);
+        int futureIdx = exists(newDir);
+        if(futureIdx != -1){
+            free(absoluteFrom);
+            free(absoluteTo);
+            free(newDir);
+            printf("El entry ya existe\n");
+            return -EEXIST;
+        }
+        strcpy(fs[idxFrom].path,newDir);
+        if(isDir==-1){
+            for(i=1; i<FILESYSTEM_SIZE;i++){
+                reemplazar_prefijo(fs[i].path, absoluteFrom, newDir);
+            }
+        }
+        free(absoluteFrom);
+        free(absoluteTo);
+        free(newDir);
+        return 0;
+    }
+
+
+    if(fs[idxTo].hasData!=-1){
+        printf("No puedes mover un elemento a un archivo.");
+        free(absoluteFrom);
+        free(absoluteTo);
+        return -ENOTDIR;
+    }
+
+    int tamano = (strlen(absoluteTo)+strlen(from)+1);
+    if(tamano >= LONGEST_FILENAME){
+        printf("Path demasiado largo.");
+        free(absoluteFrom);
+        free(absoluteTo);
+        return -ENAMETOOLONG;
+    }
+
+    char* newDir = malloc(sizeof(char)*tamano);
+
+    char* newFromCopia = malloc(sizeof(char)*LONGEST_FILENAME);
+
+    ultimoElemento(from,newFromCopia);
+
+    strcpy(newDir,absoluteTo);
+    strcat(newDir,newFromCopia);
+
+    int futureIdx = exists(newDir);
+    if(futureIdx != -1){
+        free(absoluteFrom);
+        free(absoluteTo);
+        free(newDir);
+        free(newFromCopia);
+        printf("El entry ya existe\n");
+        return -ENOENT;
+    }
+
+    strcpy(fs[idxFrom].path,newDir);
+
+    if(isDir==-1){
+        for(i=1; i<FILESYSTEM_SIZE;i++){
+            reemplazar_prefijo(fs[i].path, absoluteFrom, newDir);
+        }
+    }
+    
+    free(absoluteFrom);
+    free(absoluteTo);
+    free(newDir);
+    free(newFromCopia);
+}
+
 static int fs_unlink(const char *path){
     printf("fs_unlink: Path = %s\n", path);
     deleteElement(path);
