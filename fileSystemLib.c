@@ -9,13 +9,11 @@
 #include <assert.h>
 #include "fuseHeaders.h"
 
-//HAY QUE MIRAR SI LAS EXTERNAS SON ESTAS O LAS DEL HEADERS
 FileSystemInfo* currentDir;
 FileSystemInfo* fs;
 size_t filesize;
 int fd;
 struct stat st;
-
 
 void initialize_filesystem() {
     printf("Initializing filesystem: Setting up root and clearing blocks.\n");
@@ -47,14 +45,13 @@ void initialize_filesystem() {
 }
 
 void init(const char *filename) {
-
     fd = open(filename, O_RDWR | O_CREAT, 0666);
     if (fd == -1) {
         perror("open");
         exit(EXIT_FAILURE);
     }
 
-    if (fstat(fd, &st) == -1) {         //Se ha cambiado de dstat a fstat, comprobar esto
+    if (fstat(fd, &st) == -1) {
         perror("dstat");
         exit(EXIT_FAILURE);
     }
@@ -81,17 +78,14 @@ void init(const char *filename) {
 
 
 void cleanup() {
-
     if (msync(fs, filesize, MS_SYNC) == -1) {
         perror("msync");
         exit(EXIT_FAILURE);
     }
-
     if (munmap(fs, filesize) == -1) {
         perror("munmap");
         exit(EXIT_FAILURE);
     }
-
     close(fd);
 }
 
@@ -102,7 +96,6 @@ void changeDirectory (const char* newDir){
     if(fullPathString==NULL){
         return;
     }
-
     directorioACambiar = exists(fullPathString);
 
     if(directorioACambiar==-1){
@@ -112,9 +105,7 @@ void changeDirectory (const char* newDir){
     }
 
     fs[directorioACambiar].last_access = time(0);
-
     currentDir = &fs[directorioACambiar];
-
     free(fullPathString);
 }
 

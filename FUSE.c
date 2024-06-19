@@ -1,5 +1,4 @@
 #define FUSE_USE_VERSION 26
-
 #include <fuse.h>
 #include <sys/statvfs.h>
 #include <sys/types.h>
@@ -11,31 +10,35 @@
 #include "fuseHeaders.h"
 #include <fuse_common.h>
 
-// Prototipos de funciones
+///////////////////////////////////////////////PROTOTIPOS DE FUNCIONES///////////////////////////////////////////////
+static void *fs_init(struct fuse_conn_info *conn);
+static int fs_statvfs(const char* restrict path, struct statvfs* restrict stbuf);
 static int fs_getattr(const char *path, struct stat *stbuf);
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
 static int fs_mkdir(const char *path, mode_t mode);
 static int fs_rmdir(const char *path);
+static int fs_rename(const char *from, const char *to);
 static void fs_destroy(void *userdata);
+static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
 static int fs_unlink(const char *path);
-int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
-int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
-int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+static int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+static int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 static int fs_open(const char *path, struct fuse_file_info *fi);
 static int fs_release(const char *path, struct fuse_file_info *fi);
 static int fs_getxattr(const char *path, const char *name, char *value, size_t size);
-int fs_truncate(const char *path, off_t newsize);
-static int fs_rename(const char *from, const char *to);
-static int fs_statvfs(const char* restrict path, struct statvfs* restrict stbuf);
-static void *fs_init(struct fuse_conn_info *conn);
+static int fs_truncate(const char *path, off_t newsize);
 
+///////////////////////////////////////////////PROTOTIPOS DE FUNCIONES///////////////////////////////////////////////
 
-// Estructura de operaciones FUSE
+///////////////////////////////////////FUNCIONES FUSE///////////////////////////////////////
 static struct fuse_operations fs_oper = {
+    .init    = fs_init,
+    .statfs  = fs_statvfs,
     .getattr = fs_getattr,
     .readdir = fs_readdir,
     .mkdir   = fs_mkdir,
     .rmdir   = fs_rmdir,
+    .rename  = fs_rename,
     .destroy = fs_destroy,
     .create  = fs_create,
     .unlink  = fs_unlink,
@@ -45,13 +48,10 @@ static struct fuse_operations fs_oper = {
     .release = fs_release,
     .getxattr= fs_getxattr,
     .truncate= fs_truncate,
-    .rename  = fs_rename,
-    .statfs  = fs_statvfs,
-    .init    = fs_init,
 };
-
+///////////////////////////////////////FUNCIONES FUSE///////////////////////////////////////
 static const char *fileSystemData = "fileSystem.bin";
-
+/////////////////////////////////////IMPLEMENTACIÓN FUSE////////////////////////////////////
 static void *fs_init(struct fuse_conn_info *conn) {
     if (conn) {
         conn->max_write = BLOCKSIZE; 
@@ -60,6 +60,7 @@ static void *fs_init(struct fuse_conn_info *conn) {
     }
     return NULL;
 }
+
 static int fs_statvfs(const char* restrict path, struct statvfs* restrict stbuf){
 	stbuf->f_bsize  = BLOCKSIZE;  					// Tamaño de bloque
     stbuf->f_frsize = BLOCKSIZE; 					// Tamaño de fragmento
@@ -73,14 +74,6 @@ static int fs_statvfs(const char* restrict path, struct statvfs* restrict stbuf)
 
     return 0;
 }
-
-//~ static int fs_statfs(const char *path, struct statvfs* stbuf) {
-    //~ stbuf->f_bsize  = 4096; // block size
-    //~ stbuf->f_frsize = 4096; // fragment size
-    //~ stbuf->f_blocks = 1024; // blocks
-
-    //~ return 0; // assume no errors occurred, just return 0
-//~ } 
 
 // Función para obtener atributos de un archivo o directorio
 static int fs_getattr(const char *path, struct stat *stbuf) {
@@ -174,7 +167,6 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
     return 0;
 }
 
-
 // Función para crear un directorio
 static int fs_mkdir(const char *path, mode_t mode) {
     int result = createDir(path);
@@ -189,24 +181,6 @@ static int fs_mkdir(const char *path, mode_t mode) {
 static int fs_rmdir(const char *path) {
     printf("fs_rmdir: Path = %s\n", path);
     deleteElement(path);
-    return 0;
-}
-
-// Función para destruir el sistema de archivos
-static void fs_destroy(void *userdata) {
-    printf("fs_destroy: Destroying file system\n");
-    FileSystemInfo *fs = (FileSystemInfo*)userdata;
-    printFileSystemState("salida");
-    cleanup(fs, FILESYSTEM_SIZE * sizeof(FileSystemInfo), fileno(fopen(fileSystemData, "r")));
-    printf("fs_destroy: File system destroyed\n");
-}
-
-int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    int result = createFile(path, "", mode);
-    if (result == -1) {
-        printf("fs_create: Failed to create file.\n");
-        return -EPERM;
-    }
     return 0;
 }
 
@@ -257,11 +231,24 @@ static int fs_rename(const char* from, const char* to) {
         actualizar_padre(0,from);
         return 0;
     }
-    
+}
 
+// Función para destruir el sistema de archivos
+static void fs_destroy(void *userdata) {
+    printf("fs_destroy: Destroying file system\n");
+    FileSystemInfo *fs = (FileSystemInfo*)userdata;
+    printFileSystemState("salida");
+    cleanup(fs, FILESYSTEM_SIZE * sizeof(FileSystemInfo), fileno(fopen(fileSystemData, "r")));
+    printf("fs_destroy: File system destroyed\n");
+}
 
-
-
+static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+    int result = createFile(path, "", mode);
+    if (result == -1) {
+        printf("fs_create: Failed to create file.\n");
+        return -EPERM;
+    }
+    return 0;
 }
 
 static int fs_unlink(const char *path){
@@ -270,7 +257,7 @@ static int fs_unlink(const char *path){
     return 0;
 }
 
-int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+static int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	printf("fs_read: Path = %s\n", path);
 	char* fullpath = buildFullPath(path);
 	int idx = exists(fullpath);
@@ -299,16 +286,15 @@ int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 	} else{
 		size=0;
 	}
-    
     return size;
 }
 
-int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+static int fs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     //Para dd solo aceptamos bloques de 4096
 	printf("fs_write: Path = %s\n", path);
 	
 	char* fullpath = buildFullPath(path);
-	int idx= exists(fullpath);
+	int idx = exists(fullpath);
 	free(fullpath);
 	if(idx==-1){
 		printf("fs_write: File not found.\n");
@@ -326,41 +312,12 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
             return size;
         }
         return 0;
-        /*
-		char *existingContent = cat(fs[idx].hasData);
-        size_t existingSize = strlen(existingContent);
-
-        char *newContent = (char *)malloc(existingSize + size + 1);
-        if (!newContent) {
-            free(existingContent);
-            return -ENOMEM;
-        }
-
-        memcpy(newContent, existingContent, existingSize);
-        memcpy(newContent + existingSize, buf, size);
-        newContent[existingSize + size] = '\0';
-
-        free(existingContent);
-        
-        fs[idx].last_access = time(0);
-        fs[idx].last_modification = time(0);
-
-        if (borrarFile(fs[idx].hasData) == -1) {
-            free(newContent);
-            return -EIO;
-        }
-
-        fs[idx].hasData = escribirDesdeBuffer(newContent, existingSize + size);
-        free(newContent);
-
-        return size;*/
 	}
 	
     if(borrarFile(fs[idx].hasData)==-1){
         return -EIO;
     }
 
-	
     fs[idx].last_access = time(0);          
     fs[idx].last_modification = time(0);
 	
@@ -374,21 +331,7 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
 	}
 	
     fs[idx].hasData = escribirDesdeBuffer(buf,size);
-	
     return size;
-}
-
-//Implementada esta función para controlar algunos operadores, sin embargo, la lógica está ya implementada en el write
-int fs_truncate(const char *path, off_t newsize){
-	char* fullpath= buildFullPath(path);
-	int idx= exists(fullpath);
-	if(idx == -1){
-		return -ENOENT;
-	}
-	
-	//ds[fs[idx].hasData].totalSize=newsize;
-	free(fullpath);
-	return 0;
 }
 
 static int fs_open(const char *path, struct fuse_file_info *fi) {
@@ -399,12 +342,10 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
 		printf("fs_open: File not found.\n");
         return -ENOENT;	
 	}
-	
 	if(fs[idx].hasData==-1){
 		printf("fs_open: Not data.\n");
         return -EISDIR;
 	}
-	
 	if (fi->flags & O_TRUNC) {
         if (truncate(path, 0) == -1) {
             close(fd);
@@ -425,22 +366,27 @@ static int fs_getxattr(const char *path, const char *name, char *value, size_t s
     return -ENOTSUP;  // No tenemos atributos extendidos
 }
 
-// Función principal
-int main(int argc, char *argv[])
-{
+//Implementada esta función para controlar algunos operadores, sin embargo, la lógica está ya implementada en el write
+static int fs_truncate(const char *path, off_t newsize){
+	char* fullpath= buildFullPath(path);
+	int idx= exists(fullpath);
+	if(idx == -1){
+		return -ENOENT;
+	}
+	free(fullpath);
+	return 0;
+}
+/////////////////////////////////////IMPLEMENTACIÓN FUSE///////////////////////////////////
+int main(int argc, char *argv[]){
     // Verificar el número mínimo de argumentos y que los últimos dos no sean opciones (comienzan con '-')
     if ((argc < 3) || (argv[argc-2][0] == '-') || (argv[argc-1][0] == '-')) {
         fprintf(stderr, "Uso incorrecto de los parámetros. Debe ser: ./programa <archivo_datos> <punto_montaje>\n");
-        return 1; // Termina el programa si los parámetros no son correctos
+        return 1;
     }
-
 	init(argv[argc-2]);
     init_datasystem("dataSystem.bin");
-    // Ajustar los argumentos para FUSE
-    argv[argc-2] = argv[argc-1]; // Mueve el punto de montaje al lugar del fichero
-    argv[argc-1] = NULL;         // Elimina el último argumento para ajustar a FUSE
+    argv[argc-2] = argv[argc-1];
+    argv[argc-1] = NULL;
     argc--;
-
-    // Iniciar FUSE
     return fuse_main(argc, argv, &fs_oper, fs);
 }

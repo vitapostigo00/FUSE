@@ -14,7 +14,6 @@ size_t dataFilesize;
 int dataFd;
 struct stat dataSt;
 
-
 void initialize_datasystem() {
     for (int i = 0; i < DATASYSTEM_SIZE; i++) {
 	    ds[i].firstDataBlock = -1;
@@ -25,7 +24,6 @@ void initialize_datasystem() {
 }
 
 void init_datasystem(const char *filename) {
-
     dataFd = open(filename, O_RDWR | O_CREAT, 0666);
     if (dataFd == -1) {
         perror("open");
@@ -38,7 +36,7 @@ void init_datasystem(const char *filename) {
     }
 
     dataFilesize = DATASYSTEM_SIZE * sizeof(DataSystemInfo);
-    if (dataSt.st_size != dataFilesize) {       //Mirar si es tb st.st_size o dataSt.dataSt_size
+    if (dataSt.st_size != dataFilesize) {
         if (ftruncate(dataFd, dataFilesize) == -1) {
             perror("ftruncate");
             exit(EXIT_FAILURE);
@@ -51,7 +49,7 @@ void init_datasystem(const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    if (dataSt.st_size == 0) {                  //Mirar si es tb st.st_size o dataSt.dataSt_size
+    if (dataSt.st_size == 0) {
         initialize_datasystem();
     }
 
@@ -239,8 +237,8 @@ int insertData(const char* filename){
         return -1;
     }
 
-    fseek(archivo, 0, SEEK_END);  // Mover el puntero al final del archivo
-    tamano = ftell(archivo);      // Obtener la posición actual del puntero, que es el tamaño del archivo
+    fseek(archivo, 0, SEEK_END);
+    tamano = ftell(archivo);
 
     int blockNumToWrite = tamano/(BLOCKSIZE)+1;
     

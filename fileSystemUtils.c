@@ -3,15 +3,20 @@
 #include <string.h>
 #include <stdlib.h>
 
-void print_time(time_t raw_time) {
-    struct tm *timeinfo;
-    char buffer[80];
-
-    timeinfo = localtime(&raw_time);
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-    printf("%s\n", buffer);
+//FUNCION EXTREMADAMENTE IMPORTANTE.
+//dado un path absoluto, devuelve el índice donde se encuentra.
+int exists(const char* absoluteFilename){
+    int current = 0;
+    while(fs[current].siguiente != -1 && strcmp(fs[current].path, absoluteFilename)!=0){
+        current = fs[current].siguiente;
+    }
+    if(strcmp(fs[current].path, absoluteFilename)==0){
+        return current;
+    }
+    return -1;
 }
 
+//Devuelve 0 si un directorio es subdirectorio inmediato del otro, -1 si no.
 int subdir_inmediato(const char* parent,const char* child) {
     size_t parent_len = strlen(parent);
     size_t child_len = strlen(child);
@@ -35,7 +40,6 @@ int subdir_inmediato(const char* parent,const char* child) {
 			}
 		}
 	}
-
     return 0;
 }
 
@@ -190,6 +194,19 @@ int isPrefix(const char* prefix, const char* secondChain){
     return 0;
 }
 
+//Remplaza el prefijo por el otro si la cadena inicial es prefijo de la segunda.
+//Se usa para actualizar los hijos en rename
+void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_prefijo) {
+    if (isPrefix(prefijo, cadena)==0) {
+        size_t tamano_prefijo = strlen(prefijo);
+        size_t tamano_nuevo_prefijo = strlen(nuevo_prefijo);
+        size_t tamano_restante = strlen(cadena) - tamano_prefijo;
+        memmove(cadena + tamano_nuevo_prefijo, cadena + tamano_prefijo, tamano_restante + 1);
+        memcpy(cadena, nuevo_prefijo, tamano_nuevo_prefijo);
+    }
+}
+
+//Para el stat
 int bloqueslibres(){
 	int i;
 	int contador=0;
@@ -201,6 +218,7 @@ int bloqueslibres(){
 	return contador;
 }
 
+//Para el stat
 int nodoslibres(){
 	int i;
 	int contador=0;
@@ -213,25 +231,9 @@ int nodoslibres(){
 	return contador;
 }
 
-// Función para reemplazar el prefijo de `cadena` con `nuevo_prefijo`
-void reemplazar_prefijo(char *cadena, const char *prefijo, const char *nuevo_prefijo) {
-    // Verificar si `prefijo` es realmente un prefijo de `cadena`
-    if (isPrefix(prefijo, cadena)==0) {
-        // Calcular el tamaño de la parte de la cadena después del prefijo
-        size_t tamano_prefijo = strlen(prefijo);
-        size_t tamano_nuevo_prefijo = strlen(nuevo_prefijo);
-        size_t tamano_restante = strlen(cadena) - tamano_prefijo;
-
-        // Mover la parte restante de la cadena hacia adelante
-        memmove(cadena + tamano_nuevo_prefijo, cadena + tamano_prefijo, tamano_restante + 1);
-
-        // Copiar el nuevo prefijo en la posición correcta
-        memcpy(cadena, nuevo_prefijo, tamano_nuevo_prefijo);
-    }
-}
-
+//Devuelve el ultimo elemento de un path.
+//Para /dir1/amoDSO devuelve amoDSO
 void ultimoElemento(const char *cadena, char *resultado) {
-    
     if (strcmp(cadena, "/") == 0) {
         perror("Error: No se permite '/' como entrada.\n");
         return;
@@ -247,24 +249,14 @@ void ultimoElemento(const char *cadena, char *resultado) {
     strncpy(resultado, cadena + i +1, longitud - i);
 }
 
-int exists(const char* absoluteFilename){
-    int current = 0;
-    while(fs[current].siguiente != -1 && strcmp(fs[current].path, absoluteFilename)!=0){
-        current = fs[current].siguiente;
-    }
-    if(strcmp(fs[current].path, absoluteFilename)==0){
-        return current;
-    }
-    return -1;
-}
-
+//Para debug, imprime el estado del sistema de ficheros en un documento que reciba por parámetro
 void printFileSystemState(const char *filename) {
     FILE *file = fopen(filename, "w");
     if (file == NULL) {
         perror("fopen");
         exit(EXIT_FAILURE);
     }
-
+    
     for (int i = 0; i < FILESYSTEM_SIZE; i++) {
         if (fs[i].path[0] != '\0') { // Solo imprimir entradas válidas
             char creationTimeStr[20];
@@ -273,6 +265,5 @@ void printFileSystemState(const char *filename) {
                     i, fs[i].path, fs[i].siguiente, creationTimeStr);
         }
     }
-
     fclose(file);
 }

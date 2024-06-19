@@ -10,12 +10,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LONGEST_FILENAME 255  // Tamaño de path más largo permitido
+///////////////Variables DEFINE///////////////
+#define LONGEST_FILENAME 255 // Tamaño de path más largo permitido
 #define FILESYSTEM_SIZE 1024 // Número de entradas en el sistema de archivos
 
-#define DATASYSTEM_SIZE 65536  // Número de entradas en el sistema de datos
-#define BLOCKSIZE 1024     // Numero de bytes por bloque
-
+#define DATASYSTEM_SIZE 65536// Número de entradas en el sistema de datos
+#define BLOCKSIZE 1024       // Numero de bytes por bloque
+///////////////Variables DEFINE///////////////
+//////////////////////////////ESTRUCTURA DE CONTROL + GLOBALES//////////////////////////////
 typedef struct info {
     char path[LONGEST_FILENAME];
     int siguiente;
@@ -33,9 +35,9 @@ extern FileSystemInfo* fs;
 extern size_t filesize;
 extern int fd;
 extern struct stat st;
-
 extern FileSystemInfo* currentDir;
-
+//////////////////////////////ESTRUCTURA DE CONTROL + GLOBALES//////////////////////////////
+///////////////////////////////ESTRUCTURA DE DATOS + GLOBALES///////////////////////////////
 typedef struct data{
 	int firstDataBlock;
     int currentBlockSize;
@@ -48,52 +50,46 @@ extern DataSystemInfo *ds;
 extern size_t dataFilesize;
 extern int dataFd;
 extern struct stat dataSt;
-
-// Declaraciones de funciones de fileSystemLib.c
+///////////////////////////////ESTRUCTURA DE DATOS + GLOBALES///////////////////////////////
+///////////////////////////////FILESYSTEMLIB.C////////////////////////////////
 void initialize_filesystem();
 void init(const char *);
 void cleanup();
 void changeDirectory(const char*);
 int createDir(const char*);
-void deleteElement(const char*);
-//int renameItem(FileSystemInfo *fs, const char* oldName, const char* newName);
-void borrar(const char*);
 int createFile(const char*, const char*, mode_t);
-// Declaraciones de funciones de fileSystemLib.c
-
-
-// Declaraciones de funciones de fileSystemUtils.c
+void borrar(const char*);
+void deleteElement(const char*);
+///////////////////////////////FILESYSTEMLIB.C////////////////////////////////
+//////////////////////////////FILESYSTEMUTILS.C///////////////////////////////
 int exists(const char*);
-void print_time(time_t);
+int subdir_inmediato(const char*,const char*);
 int nextEmptyBlock();
 int lastUsedBlock();
+void actualizar_padre(int, const char*);
+char* padrefrompath(const char* path);
 char* buildFullPath(const char*);
 int isPrefix(const char*, const char*);
-void printFileSystemState(const char *);
-int subdir_inmediato(const char*,const char*);
-void ultimoElemento(const char*, char*);
-void actualizar_padre(int, const char*);
 void reemplazar_prefijo(char*, const char*, const char*);
-int nodoslibres();
 int bloqueslibres();
-char* padrefrompath(const char* path);
-// Declaraciones de funciones de fileSystemUtils.c
-
-
-// Declaraciones de funciones de dataSystemLib.c
+int nodoslibres();
+void ultimoElemento(const char*, char*);
+void printFileSystemState(const char *);
+//////////////////////////////FILESYSTEMUTILS.C///////////////////////////////
+///////////////////////////////DATASYSTEMLIB.C////////////////////////////////
 void initialize_datasystem();
 void init_datasystem(const char*);
 int primerElementoLibre();
 int hayEspacio(int);
-int copiarSinCheck(int,const char*, int);
+int copiarSinCheck(int, const char*, int);
+int copiarStream(int , const char*, unsigned long , int);
+int createEmpty();
+int escribirDesdeBuffer(const char*, unsigned long);
 int copiarFichero(int, FILE*, long , int);
 int insertData(const char*);
 char* cat(int);
 void escribirArchivoBinario(const char*, int, size_t);
 int borrarFile(int);
 size_t sizeOfFile(int);
-int escribirDesdeBuffer(const char*, unsigned long);
-int copiarStream(int , const char*, unsigned long , int);
-// Declaraciones de funciones de dataSystemLib.c
-
+///////////////////////////////DATASYSTEMLIB.C////////////////////////////////
 #endif
