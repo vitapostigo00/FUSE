@@ -1,7 +1,7 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
-#include <sys/statfs.h>
+//#include <sys/statvfs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +24,7 @@ static int fs_release(const char *path, struct fuse_file_info *fi);
 static int fs_getxattr(const char *path, const char *name, char *value, size_t size);
 int fs_truncate(const char *path, off_t newsize);
 static int fs_rename(const char *from, const char *to);
-static int fs_statfs(const char *path, struct statvfs *stbuf);
+//static int fs_statfs(const char *path, struct statvfs *stbuf);
 
 
 // Estructura de operaciones FUSE
