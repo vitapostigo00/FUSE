@@ -18,7 +18,7 @@ CFLAGS = -Wall -g
 MOUNT_DIR = mount_point
 
 # Nombre del archivo de datos
-DATA_FILE = filesystem.bin
+DATA_FILE = fileSystem.bin
 
 # Compilar el proyecto
 $(TARGET): $(SRCS)

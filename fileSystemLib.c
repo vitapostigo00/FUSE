@@ -189,7 +189,7 @@ int createFile(const char* filename, const char* input){
 
     fs[lastBlock].siguiente = emptyBlock;
 
-    fs[emptyBlock].hasData = escribirDesdeBuffer(input);
+    fs[emptyBlock].hasData = escribirDesdeBuffer(input,strlen(input));
     strcpy(fs[emptyBlock].path, fullPathString);
     fs[emptyBlock].siguiente = -1;
     fs[emptyBlock].creation_time = time(0);

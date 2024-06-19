@@ -11,11 +11,10 @@
 #include <string.h>
 
 #define LONGEST_FILENAME 255  // Tamaño de path más largo permitido
-#define FILESYSTEM_SIZE 1024  // Número de entradas en el sistema de archivos
+#define FILESYSTEM_SIZE 1024 // Número de entradas en el sistema de archivos
 
-//Datos predeterminados en una FAT16 para 1/2 GB
-#define DATASYSTEM_SIZE 65536 // Número de entradas en el sistema de datos
-#define BLOCKSIZE       32768 // Numero de bytes por bloque
+#define DATASYSTEM_SIZE 65536  // Número de entradas en el sistema de datos
+#define BLOCKSIZE 4096       // Numero de bytes por bloque
 
 typedef struct info {
     char path[LONGEST_FILENAME];
@@ -91,8 +90,8 @@ char* cat(int);
 void escribirArchivoBinario(const char*, int, size_t);
 int borrarFile(int);
 size_t sizeOfFile(int);
-int escribirDesdeBuffer(const char*);
-int copiarStream(int , const char*, long , int);
+int escribirDesdeBuffer(const char*, unsigned long);
+int copiarStream(int , const char*, unsigned long , int);
 // Declaraciones de funciones de dataSystemLib.c
 
 #endif

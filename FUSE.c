@@ -1,13 +1,15 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
-//#include <sys/statvfs.h>
+#include <sys/statvfs.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include "fuseHeaders.h"
+#include <fuse_common.h>
 
 // Prototipos de funciones
 static int fs_getattr(const char *path, struct stat *stbuf);
@@ -24,7 +26,8 @@ static int fs_release(const char *path, struct fuse_file_info *fi);
 static int fs_getxattr(const char *path, const char *name, char *value, size_t size);
 int fs_truncate(const char *path, off_t newsize);
 static int fs_rename(const char *from, const char *to);
-//static int fs_statfs(const char *path, struct statvfs *stbuf);
+static int fs_statvfs(const char* restrict path, struct statvfs* restrict stbuf);
+static void *fs_init(struct fuse_conn_info *conn);
 
 
 // Estructura de operaciones FUSE
@@ -43,27 +46,33 @@ static struct fuse_operations fs_oper = {
     .getxattr= fs_getxattr,
     .truncate= fs_truncate,
     .rename  = fs_rename,
-    //.statfs  = fs_statfs,
+    .statfs  = fs_statvfs,
+    .init    = fs_init,
 };
 
-static const char *fileSystemData = "filesystem.bin";
+static const char *fileSystemData = "fileSystem.bin";
 
+static void *fs_init(struct fuse_conn_info *conn) {
+    if (conn) {
+        conn->max_write = BLOCKSIZE; 
+    } else {
+        printf("fuse_conn_info is NULL\n");
+    }
+    return NULL;
+}
+static int fs_statvfs(const char* restrict path, struct statvfs* restrict stbuf){
+	stbuf->f_bsize  = BLOCKSIZE;  					// Tamaño de bloque
+    stbuf->f_frsize = BLOCKSIZE; 					// Tamaño de fragmento
+    stbuf->f_blocks = (fsblkcnt_t) DATASYSTEM_SIZE; // Total de bloques
+    stbuf->f_bfree  = (fsblkcnt_t) bloqueslibres(); // Bloques libres
+    stbuf->f_bavail = (fsblkcnt_t) bloqueslibres(); // Bloques disponibles para usuarios no privilegiados
+    stbuf->f_files 	= (fsfilcnt_t)FILESYSTEM_SIZE;  // Total de inodos
+    stbuf->f_ffree 	= (fsfilcnt_t)nodoslibres();    // Inodos libres
+    stbuf->f_favail = (fsfilcnt_t) nodoslibres();   // Inodos disponibles para usuarios no privilegiados
+    stbuf->f_namemax= LONGEST_FILENAME;             // Máximo número de caracteres en un nombre de archivo
 
-//~ static int fs_statfs(const char *path, struct statvfs *stbuf){
-	//~ memset(stbuf, 0, sizeof(struct statvfs));
-	//~ stbuf->f_bsize = BLOCKSIZE;  // Tamaño de bloque
-    //~ stbuf->f_frsize = BLOCKSIZE; // Tamaño de fragmento
-    //~ stbuf->f_blocks = DATASYSTEM_SIZE; // Total de bloques
-    //~ stbuf->f_bfree = bloqueslibres();  // Bloques libres
-    //~ stbuf->f_bavail =bloqueslibres(); // Bloques disponibles para usuarios no privilegiados
-    //~ stbuf->f_files = FILESYSTEM_SIZE;   // Total de inodos
-    //~ stbuf->f_ffree = nodoslibres();    // Inodos libres
-    //~ stbuf->f_favail = nodoslibres();   // Inodos disponibles para usuarios no privilegiados
-    //~ stbuf->f_fsid = 33;    // Identificador del sistema de archivos
-    //~ stbuf->f_namemax = LONGEST_FILENAME;    // Máximo número de caracteres en un nombre de archivo
-
-    //~ return 0;
-//~ }
+    return 0;
+}
 
 //~ static int fs_statfs(const char *path, struct statvfs* stbuf) {
     //~ stbuf->f_bsize  = 4096; // block size
@@ -351,24 +360,60 @@ int fs_write(const char *path, const char *buf, size_t size, off_t offset, struc
 		printf("fs_write: File not found.\n");
         return -ENOENT;	
 	}
-    
+    printf("IDX: %i\n", fs[idx].hasData);
     if(fs[idx].hasData==-1){
 		printf("fs_write: Not a file.\n");
         return -EISDIR;
 	}
+	
+	if(offset != 0){
+		char *existingContent = cat(fs[idx].hasData);
+        size_t existingSize = strlen(existingContent);
 
+        char *newContent = (char *)malloc(existingSize + size + 1);
+        if (!newContent) {
+            free(existingContent);
+            return -ENOMEM;
+        }
+
+        memcpy(newContent, existingContent, existingSize);
+        memcpy(newContent + existingSize, buf, size);
+        newContent[existingSize + size] = '\0';
+
+        free(existingContent);
+        
+        fs[idx].last_access = time(0);
+        fs[idx].last_modification = time(0);
+
+        if (borrarFile(fs[idx].hasData) == -1) {
+            free(newContent);
+            return -EIO;
+        }
+
+        fs[idx].hasData = escribirDesdeBuffer(newContent, existingSize + size);
+        free(newContent);
+
+        return size;
+	}
+	
     if(borrarFile(fs[idx].hasData)==-1){
         return -EIO;
     }
 
+	
     fs[idx].last_access = time(0);          
     fs[idx].last_modification = time(0);
 	
-	char* newbuf=malloc(sizeof (char) * (size+1));
-	memcpy(newbuf,buf,size);
-	newbuf[size]='\0';
-    fs[idx].hasData = escribirDesdeBuffer(newbuf);
-	free(newbuf);
+	FILE* archivo=fopen(buf, "rb");
+	if(archivo!=NULL){
+		fseek(archivo, 0, SEEK_END);
+		int tamano=ftell(archivo);
+		fclose(archivo);
+		fs[idx].hasData=insertData(buf);
+		return tamano;
+	}
+	
+    fs[idx].hasData = escribirDesdeBuffer(buf,size);
 	
     return size;
 }
@@ -430,7 +475,7 @@ int main(int argc, char *argv[])
     }
 
 	init(argv[argc-2]);
-    init_datasystem("filesystem.bin");
+    init_datasystem("dataSystem.bin");
     // Ajustar los argumentos para FUSE
     argv[argc-2] = argv[argc-1]; // Mueve el punto de montaje al lugar del fichero
     argv[argc-1] = NULL;         // Elimina el último argumento para ajustar a FUSE

@@ -45,7 +45,7 @@ void init_datasystem(const char *filename) {
         }
     }
 
-    ds = mmap(NULL, dataFilesize, PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, filesize);
+    ds = mmap(NULL, dataFilesize, PROT_READ | PROT_WRITE, MAP_SHARED, dataFd, 0);
     if (ds == MAP_FAILED) {
         perror("mmap ds");
         exit(EXIT_FAILURE);
@@ -82,17 +82,22 @@ int hayEspacio(int numBloques){
     return 0;
 }
 
-int copiarStream(int primBloque,const char* dataStream,long tamano,int blockNumToWrite){
+int copiarStream(int primBloque,const char* dataStream, unsigned long tamano,int blockNumToWrite){
     int i;
     int j;
     int currentBlock = primBloque;
-
+	printf("blockNumtoWrite: %i\n", blockNumToWrite);
+	fflush(stdout);
+	printf("tamano: %lu\n", tamano);
+	fflush(stdout);
     for(i=0 ; i < blockNumToWrite; i++){
 
         ds[currentBlock].firstDataBlock = primBloque;
         
         if(i == blockNumToWrite-1){
             ds[currentBlock].currentBlockSize = tamano%BLOCKSIZE;
+            printf("ds[currentBlock].currentBlockSize: %i\n",ds[currentBlock].currentBlockSize);
+            fflush(stdout);
         }else{
             ds[currentBlock].currentBlockSize = BLOCKSIZE;
         }
@@ -119,10 +124,25 @@ int copiarStream(int primBloque,const char* dataStream,long tamano,int blockNumT
     return 0;
 }
 
+int createEmpty(){
+	int bloque=primerElementoLibre();
+	ds[bloque].firstDataBlock= bloque;
+	ds[bloque].currentBlockSize= 0;
+	ds[bloque].totalSize=0;
+	ds[bloque].dat[0]= '\0';
+	ds[bloque].siguiente=-1;
+	return bloque;
+}
 
-int escribirDesdeBuffer(const char* dataStream){
-    long tamano = strlen(dataStream);
+int escribirDesdeBuffer(const char* dataStream, unsigned long tamano){
+    
+    if(tamano==0){
+		return createEmpty();
+	}
+    
+    printf("tamanodesdebuffer: %lu\n", tamano);
     int blockNumToWrite = tamano/(BLOCKSIZE)+1;
+    
     if(!hayEspacio((tamano/(BLOCKSIZE)+1))){
         printf("No hay espacio.\n");
         return -1;
@@ -314,7 +334,7 @@ int borrarFile(int dat){
 	    ds[dataCopy].siguiente = -1;
         dataCopy = siguiente; 
     }
-    while(ds[dataCopy].siguiente != -1);
+    while((dataCopy !=-1) && (ds[dataCopy].siguiente != -1));
 	
 	return 0;
 }
